@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>DCC Platform - Update Password Baru</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Buat Password Baru</h2>
+        <p>Silakan masukkan password baru Anda.</p>
+        
+        <form id="updatePasswordForm">
+            <input type="password" id="newPassword" placeholder="Password Baru (Min. 6 Karakter)" required minlength="6" />
+            <button type="submit">Simpan Password Baru</button>
+        </form>
+        
+        <p id="message" style="color: green; display: none;"></p>
+        <p id="errorMessage" style="color: red; display: none;"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = "https://xyzexample.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // PENTING: Supabase otomatis menangani token login saat link email diklik.
+        // Kita tinggal mengeksekusi fungsi updateUser untuk mengubah password.
+        document.getElementById('updatePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('newPassword').value;
+            const messageBox = document.getElementById('message');
+            const errorBox = document.getElementById('errorMessage');
+
+            messageBox.style.display = "none";
+            errorBox.style.display = "none";
+
+            const { data, error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+
+            if (error) {
+                errorBox.innerText = "Gagal memperbarui password: " + error.message;
+                errorBox.style.display = "block";
+            } else {
+                messageBox.innerText = "Password berhasil diperbarui! Mengarahkan Anda ke halaman login...";
+                messageBox.style.display = "block";
+                
+                // Beri jeda 3 detik lalu lempar balik ke halaman login utama
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
