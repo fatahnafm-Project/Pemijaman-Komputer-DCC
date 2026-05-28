@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>DCC Platform - Lupa Password</title>
+    <!-- Tambahkan CSS Anda di sini agar tampilannya rapi -->
+</head>
+<body>
+    <div class="container">
+        <h2>Lupa Password DCC Platform</h2>
+        <p>Masukkan email Anda yang terdaftar. Kami akan mengirimkan tautan untuk mengatur ulang password.</p>
+        
+        <form id="forgotPasswordForm">
+            <input type="email" id="resetEmail" placeholder="Masukkan Email Anda" required />
+            <button type="submit">Kirim Tautan Reset</button>
+        </form>
+        
+        <p id="message" style="color: green; display: none;"></p>
+        <p id="errorMessage" style="color: red; display: none;"></p>
+        <a href="login.html">Kembali ke Login</a>
+    </div>
+
+    <!-- PENTING: Pastikan mengimpor library Supabase yang sama dengan yang Anda pakai di login -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 1. Inisialisasi Supabase (Ganti dengan URL dan Anon Key proyek Anda)
+        const SUPABASE_URL = "https://xyzexample.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 2. Proses Kirim Email Reset
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            const messageBox = document.getElementById('message');
+            const errorBox = document.getElementById('errorMessage');
+
+            messageBox.style.display = "none";
+            errorBox.style.display = "none";
+
+            const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+                // ⚠️ GANTI URL di bawah ini sesuai dengan alamat repository GitHub Pages Anda nanti
+                redirectTo: 'https://username.github.io/repository-anda/update-password.html',
+            });
+
+            if (error) {
+                errorBox.innerText = "Gagal: " + error.message;
+                errorBox.style.display = "block";
+            } else {
+                messageBox.innerText = "Silakan cek kotak masuk (atau spam) email Anda untuk mengatur ulang password.";
+                messageBox.style.display = "block";
+            }
+        });
+    </script>
+</body>
+</html>
