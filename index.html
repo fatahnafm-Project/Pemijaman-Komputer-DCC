@@ -69,6 +69,12 @@
                         <button @click="currentMenu = 'loan'" :class="currentMenu === 'loan' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
                             <i class="fa-solid fa-handshake mr-1.5"></i>Loan Menu
                         </button>
+                        
+                        <button @click="bukaMenuChat()" :class="currentMenu === 'chat' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition relative">
+                            <i class="fa-solid fa-comments mr-1.5"></i>Room Chat
+                            <span x-show="unreadCount > 0" x-text="unreadCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center animate-bounce shadow-sm"></span>
+                        </button>
+
                         <button @click="currentMenu = 'service'" :class="currentMenu === 'service' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
                             <i class="fa-solid fa-screwdriver-wrench mr-1.5"></i>Service Log
                         </button>
@@ -95,6 +101,12 @@
                 <button @click="currentMenu = 'dashboard'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-chart-pie w-5 mr-2"></i>Dashboard</button>
                 <button @click="currentMenu = 'stock'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-boxes-stacked w-5 mr-2"></i>Unit Stock</button>
                 <button @click="currentMenu = 'loan'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-handshake w-5 mr-2"></i>Loan Menu</button>
+                
+                <button @click="bukaMenuChat(); mobileMenuOpen = false" class="w-full text-left flex justify-between items-center px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700">
+                    <span><i class="fa-solid fa-comments w-5 mr-2"></i>Room Chat</span>
+                    <span x-show="unreadCount > 0" x-text="unreadCount" class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold"></span>
+                </button>
+
                 <button @click="currentMenu = 'service'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-screwdriver-wrench w-5 mr-2"></i>Service Log</button>
                 <button @click="currentMenu = 'checking'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-square-check w-5 mr-2"></i>Checking Unit</button>
                 <button @click="currentMenu = 'recap'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-folder-open w-5 mr-2"></i>Recapitulation</button>
@@ -151,7 +163,7 @@
                                 <table class="w-full text-left text-xs">
                                     <thead class="bg-slate-50 border-b border-slate-100 font-semibold text-slate-600">
                                         <tr><th class="p-2.5">Computer ID</th><th class="p-2.5">Committee</th><th class="p-2.5">Due Date</th></tr>
-                                     Reds
+                                    </thead>
                                     <tbody class="divide-y divide-slate-100">
                                         <template x-if="filteredLoansThisMonth.length === 0">
                                             <tr><td colspan="3" class="p-3 text-center text-slate-400 italic">No approved data found this month.</td></tr>
@@ -296,6 +308,39 @@
                                 <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Push Loan Payload
                             </button>
                         </div>
+                    </form>
+                </div>
+            </div>
+
+            <div x-show="currentMenu === 'chat'" x-transition class="max-w-xl mx-auto">
+                <div class="bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden flex flex-col h-[500px]">
+                    <div class="bg-blue-700 text-white p-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-comments text-amber-400 text-xl"></i>
+                            <div>
+                                <h2 class="text-sm font-bold">DCC Encrypted Room Chat</h2>
+                                <p class="text-[10px] text-blue-200">Komunikasi internal terenkripsi samaran divisi komite</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="chatBoxContainer" class="flex-grow p-4 overflow-y-auto bg-slate-50 space-y-3 flex flex-col">
+                        <template x-for="chat in chatMessages" :key="chat.id">
+                            <div :class="chat.sender_email === session.user.email ? 'self-end bg-blue-600 text-white rounded-br-none' : 'self-start bg-white text-slate-800 border border-slate-100 rounded-bl-none'" 
+                                 class="max-w-[75%] p-3 rounded-2xl shadow-sm text-xs flex flex-col">
+                                <span class="font-bold text-[10px] block mb-1 opacity-75" 
+                                      x-text="chat.sender_email === session.user.email ? 'Anda' : samarkanNama(chat.sender_email)"></span>
+                                <span class="break-words font-medium" x-text="chat.message_text"></span>
+                                <span class="text-[9px] text-right mt-1 opacity-50 block font-mono" x-text="chat.created_at && chat.created_at.includes('T') ? chat.created_at.split('T')[1].slice(0,5) : ''"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <form @submit.prevent="kirimPesanObrolan" class="p-3 border-t border-slate-100 bg-white flex space-x-2">
+                        <input type="text" x-model="textChatBaru" placeholder="Tulis pesan koordinasi di sini..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 rounded-lg text-xs transition shadow-sm">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
                     </form>
                 </div>
             </div>
@@ -502,6 +547,12 @@
                 searchQuery: '',
                 authLoading: false,
 
+                // Properti State Fitur Room Chat
+                chatMessages: [],
+                textChatBaru: '',
+                unreadCount: 0,
+                chatRealtimeChannel: null,
+
                 authForm: { email: '', password: '', isSignUp: false },
                 componentList: ['CPU/Computer', 'Monitor', 'Mouse & Keyboard', 'Power Cable', 'Monitor Cable', 'UPS'],
                 
@@ -514,13 +565,13 @@
                 checkingForm: { computer_name: '', components: [] },
                 
                 async initApp() {
-                    // Deteksi otomatis status login begitu aplikasi dibuka (Stay Sign In)
                     const { data: sessionData } = await supabaseClient.auth.getSession();
                     this.session = sessionData.session;
                     
                     if (this.session) {
                         await this.fetchUserRole();
                         await this.syncDatabaseState();
+                        this.inisialisasiJalurChatRealtime(); // Jalankan listener chat cloud
                     }
 
                     supabaseClient.auth.onAuthStateChange(async (event, currentSession) => {
@@ -530,14 +581,85 @@
                         if (currentSession) {
                             await this.fetchUserRole();
                             await this.syncDatabaseState();
+                            this.inisialisasiJalurChatRealtime();
                         } else {
                             this.userRole = 'MEMBER';
                             this.loans = [];
                             this.services = [];
                             this.inventories = [];
+                            this.chatMessages = [];
+                            if(this.chatRealtimeChannel) this.chatRealtimeChannel.unsubscribe();
                         }
                     });
                 },
+
+                // ====== INTEGRATED ROOM CHAT FUNCTIONS =====
+                
+                // Menyamarkan email (Contoh: fatahnafm.project@gmail.com -> fatahnafm...)
+                samarkanNama(email) {
+                    if (!email) return "User DCC";
+                    let namaDepan = email.split('@')[0];
+                    if (namaDepan.includes('.')) {
+                        namaDepan = namaDepan.split('.')[0];
+                    }
+                    return namaDepan + "...";
+                },
+
+                // Menghubungkan WebSocket Realtime Supabase untuk Chat
+                async inisialisasiJalurChatRealtime() {
+                    const { data: dataChat } = await supabaseClient
+                        .from('dcc_chats')
+                        .select('*')
+                        .order('id', { ascending: true });
+                    this.chatMessages = dataChat || [];
+                    this.autoScrollChatBox();
+
+                    // Listen data chat insert secara real-time
+                    this.chatRealtimeChannel = supabaseClient
+                        .channel('room-dcc-channel')
+                        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dcc_chats' }, payload => {
+                            const pesanBaru = payload.new;
+                            this.chatMessages.push(pesanBaru);
+                            this.autoScrollChatBox();
+
+                            // Trigger notifikasi jika user sedang di halaman menu lain
+                            if (pesanBaru.sender_email !== this.session.user.email && this.currentMenu !== 'chat') {
+                                this.unreadCount++;
+                            }
+                        })
+                        .subscribe();
+                },
+
+                bukaMenuChat() {
+                    this.currentMenu = 'chat';
+                    this.unreadCount = 0; // Bersihkan angka notifikasi
+                    this.autoScrollChatBox();
+                },
+
+                async kirimPesanObrolan() {
+                    if (!this.textChatBaru.trim()) return;
+
+                    const payloadPayload = {
+                        sender_email: this.session.user.email,
+                        message_text: this.textChatBaru.trim()
+                    };
+
+                    const { error } = await supabaseClient.from('dcc_chats').insert([payloadPayload]);
+                    if (error) {
+                        alert("Gagal mengirim pesan: " + error.message);
+                    } else {
+                        this.textChatBaru = '';
+                    }
+                },
+
+                autoScrollChatBox() {
+                    setTimeout(() => {
+                        const container = document.getElementById('chatBoxContainer');
+                        if (container) container.scrollTop = container.scrollHeight;
+                    }, 150);
+                },
+
+                // ==========================================
 
                 async fetchUserRole() {
                     try {
@@ -571,12 +693,11 @@
                             alert("Account provisioned successfully! Check email for verification or log in directly if confirmed.");
                             this.authForm.isSignUp = false;
                         } else {
-                            // Proses login dengan menyuntikkan persistSession agar user tetap tersimpan loginnya
                             const { error } = await supabaseClient.auth.signInWithPassword({ 
                                 email: this.authForm.email, 
                                 password: this.authForm.password,
                                 options: {
-                                    persistSession: true // 👈 Fitur STAY SIGN IN AKTIFF!
+                                    persistSession: true
                                 }
                             });
                             if (error) throw error;
