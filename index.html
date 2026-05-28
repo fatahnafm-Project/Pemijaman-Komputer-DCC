@@ -227,13 +227,21 @@
                             <tbody class="divide-y divide-slate-100 font-medium">
                                 <template x-for="item in inventories" :key="item.id">
                                     <tr class="hover:bg-slate-50/50">
-                                        <td class="p-3 font-bold text-slate-800" x-text="item.computer_name"></td>
+                                        <!-- Kolom Computer ID yang Berubah Warna Mengikuti Status Peminjaman -->
+                                        <td class="p-3 font-bold">
+                                            <span :class="item.is_available ? 'text-slate-800 bg-slate-100 px-2 py-1 rounded-md' : 'text-red-800 bg-red-100 px-2 py-1 rounded-md animate-pulse'" 
+                                                  x-text="item.computer_name + (item.is_available ? '' : ' (🔴 Borrowed)')">
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- Indikator Komponen -->
                                         <td class="p-3"><span :class="item.comp_cpu ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_cpu ? '🟢 Available' : '🔴 Defective'"></span></td>
                                         <td class="p-3"><span :class="item.comp_monitor ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_monitor ? '🟢 Available' : '🔴 Defective'"></span></td>
                                         <td class="p-3"><span :class="item.comp_mouse_keyboard ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_mouse_keyboard ? '🟢 Available' : '🔴 Defective'"></span></td>
                                         <td class="p-3"><span :class="item.comp_power_cable ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_power_cable ? '🟢 Available' : '🔴 Defective'"></span></td>
                                         <td class="p-3"><span :class="item.comp_monitor_cable ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_monitor_cable ? '🟢 Available' : '🔴 Defective'"></span></td>
                                         <td class="p-3"><span :class="item.comp_ups ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_ups ? '🟢 Available' : '🔴 Defective'"></span></td>
+                                        
                                         <td class="p-3 text-center" x-show="userRole === 'ADMIN'">
                                             <button @click="deleteInventoryNode(item.id, item.computer_name)" class="text-red-600 hover:text-red-800 font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
                                         </td>
