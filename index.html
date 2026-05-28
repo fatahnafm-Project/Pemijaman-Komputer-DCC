@@ -29,7 +29,7 @@
                 </div>
                 
                 <div class="flex items-center justify-between text-xs pt-1">
-                    <label class="flex items-center text-slate-600">
+                    <label class="flex items-center text-slate-600 cursor-pointer">
                         <input type="checkbox" x-model="authForm.isSignUp" class="mr-2 rounded text-blue-600 border-slate-300">
                         Register as a new account
                     </label>
@@ -383,17 +383,18 @@
 
     <script>
         // ============================================
-        // !!! PASTE YOUR SUPABASE CONFIG HERE !!!
+        // FIXED SUPABASE INSTANTIATION LOGIC
         // ============================================
-        const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co/rest/v1/";
+        const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Zmlhdmh5eGlpa2xhbGNna2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA2MzEsImV4cCI6MjA5NTQ4NjYzMX0.Ywsf6lQ6InM6W35fiqyqIXil7V33X402VhRznUcMAFo";
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Perbaikan vital pada pemanggilan CDN global library Supabase
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         function appState() {
             return {
                 session: null,
-                userRole: 'MEMBER', // Protection defaults to lower clearance
+                userRole: 'MEMBER', 
                 currentMenu: 'dashboard',
                 mobileMenuOpen: false,
                 searchQuery: '',
@@ -408,17 +409,15 @@
                 loanForm: { computer_name: '', committee: '', start_date: '', end_date: '', components: [] },
                 serviceForm: { computer_name: '', details: '', components: [] },
 
-                // Initialization Sequence Lifecycle Engine
                 async initApp() {
-                    const { data } = await supabase.auth.getSession();
+                    const { data } = await supabaseClient.auth.getSession();
                     this.session = data.session;
                     if (this.session) {
                         await this.fetchUserRole();
                         await this.syncDatabaseState();
                     }
 
-                    // Setup real-time listening monitoring context
-                    supabase.auth.onAuthStateChange(async (event, currentSession) => {
+                    supabaseClient.auth.onAuthStateChange(async (event, currentSession) => {
                         this.session = currentSession;
                         if (currentSession) {
                             await this.fetchUserRole();
@@ -431,37 +430,34 @@
                     });
                 },
 
-                // Fetch Account Role Claims from Profiles Database
                 async fetchUserRole() {
                     try {
-                        const { data, error } = await supabase
+                        const { data, error } = await supabaseClient
                             .from('profiles')
                             .select('role')
                             .eq('id', this.session.user.id)
                             .single();
                         if (data) this.userRole = data.role;
-                    } catch (e) { console.error('Error establishing account structural claims mapping:', e); }
+                    } catch (e) { console.error('Error establishing account role:', e); }
                 },
 
-                // Sync Internal State with Supabase Ecosystem
                 async syncDatabaseState() {
-                    const { data: loanData } = await supabase.from('loans').select('*').order('id', { ascending: false });
+                    const { data: loanData } = await supabaseClient.from('loans').select('*').order('id', { ascending: false });
                     this.loans = loanData || [];
-                    const { data: serviceData } = await supabase.from('services').select('*').order('id', { ascending: false });
+                    const { data: serviceData } = await supabaseClient.from('services').select('*').order('id', { ascending: false });
                     this.services = serviceData || [];
                 },
 
-                // Authentication Execution Flow Handlers
                 async handleAuth() {
                     this.authLoading = true;
                     try {
                         if (this.authForm.isSignUp) {
-                            const { error } = await supabase.auth.signUp({ email: this.authForm.email, password: this.authForm.password });
+                            const { error } = await supabaseClient.auth.signUp({ email: this.authForm.email, password: this.authForm.password });
                             if (error) throw error;
-                            alert("Account provisioned successfully! You can now authenticate with your login credentials.");
+                            alert("Account provisioned successfully! Check email for verification or log in directly if confirmed.");
                             this.authForm.isSignUp = false;
                         } else {
-                            const { error } = await supabase.auth.signInWithPassword({ email: this.authForm.email, password: this.authForm.password });
+                            const { error } = await supabaseClient.auth.signInWithPassword({ email: this.authForm.email, password: this.authForm.password });
                             if (error) throw error;
                         }
                     } catch (err) {
@@ -470,14 +466,13 @@
                 },
 
                 async handleLogout() {
-                    await supabase.auth.signOut();
+                    await supabaseClient.auth.signOut();
                     this.session = null;
                 },
 
-                // Form Pipeline Upload Submissions
                 async submitLoanForm() {
                     const payload = { ...this.loanForm, computer_name: this.loanForm.computer_name.toUpperCase() };
-                    const { error } = await supabase.from('loans').insert([payload]);
+                    const { error } = await supabaseClient.from('loans').insert([payload]);
                     if (error) { alert(error.message); return; }
                     alert("Loan parameters synchronized directly onto the cloud layer!");
                     this.loanForm = { computer_name: '', committee: '', start_date: '', end_date: '', components: [] };
@@ -487,37 +482,36 @@
 
                 async submitServiceForm() {
                     const payload = { ...this.serviceForm, computer_name: this.serviceForm.computer_name.toUpperCase() };
-                    const { error } = await supabase.from('services').insert([payload]);
+                    const { error } = await supabaseClient.from('services').insert([payload]);
                     if (error) { alert(error.message); return; }
-                    alert("Service engineering diagnostics synchronized directly onto the cloud layer!");
+                    alert("Service engineering diagnostics synchronized onto the cloud layer!");
                     this.serviceForm = { computer_name: '', details: '', components: [] };
                     await this.syncDatabaseState();
                     this.currentMenu = 'dashboard';
                 },
 
-                // Admin-Privileged Modifiers & State Changers
                 async approveLoan(id) {
-                    const { error } = await supabase.from('loans').update({ status: 'APPROVED' }).eq('id', id);
+                    const { error } = await supabaseClient.from('loans').update({ status: 'APPROVED' }).eq('id', id);
                     if (error) alert(error.message);
                     else this.syncDatabaseState();
                 },
 
                 async resolveService(id) {
-                    const { error } = await supabase.from('services').update({ status: 'RESOLVED' }).eq('id', id);
+                    const { error } = await supabaseClient.from('services').update({ status: 'RESOLVED' }).eq('id', id);
                     if (error) alert(error.message);
                     else this.syncDatabaseState();
                 },
 
                 async deleteLoan(id) {
                     if(!confirm("Purge selected record from the permanent distributed logs data grid?")) return;
-                    const { error } = await supabase.from('loans').delete().eq('id', id);
+                    const { error } = await supabaseClient.from('loans').delete().eq('id', id);
                     if (error) alert(error.message);
                     else this.syncDatabaseState();
                 },
 
                 async deleteService(id) {
                     if(!confirm("Purge selected record from the permanent distributed logs data grid?")) return;
-                    const { error } = await supabase.from('services').delete().eq('id', id);
+                    const { error } = await supabaseClient.from('services').delete().eq('id', id);
                     if (error) alert(error.message);
                     else this.syncDatabaseState();
                 },
@@ -526,7 +520,7 @@
                     const nextName = prompt("Modify target computer name identifier node:", loan.computer_name);
                     const nextCommittee = prompt("Modify assigned committee assignment scope:", loan.committee);
                     if(nextName && nextCommittee) {
-                        await supabase.from('loans').update({ computer_name: nextName.toUpperCase(), committee: nextCommittee }).eq('id', loan.id);
+                        await supabaseClient.from('loans').update({ computer_name: nextName.toUpperCase(), committee: nextCommittee }).eq('id', loan.id);
                         this.syncDatabaseState();
                     }
                 },
@@ -534,12 +528,11 @@
                 async editService(srv) {
                     const nextDetails = prompt("Modify engineering structural log text field summary:", srv.details);
                     if(nextDetails) {
-                        await supabase.from('services').update({ details: nextDetails }).eq('id', srv.id);
+                        await supabaseClient.from('services').update({ details: nextDetails }).eq('id', srv.id);
                         this.syncDatabaseState();
                     }
                 },
 
-                // Derived Reactive Contextual Filtering Computations
                 getCurrentMonthYear() { return "May 2026"; },
                 get filteredLoansThisMonth() {
                     return this.loans.filter(l => l.status === 'APPROVED' && (l.start_date.includes('-05-') || l.end_date.includes('-05-')));
