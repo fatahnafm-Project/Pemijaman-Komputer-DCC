@@ -235,13 +235,13 @@
                                         </td>
                                         
                                         <!-- Indikator Komponen -->
-                                        <td class="p-3"><span :class="item.comp_cpu ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_cpu ? '🟢 Available' : '🔴 Defective'"></span></td>
-                                        <td class="p-3"><span :class="item.comp_monitor ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_monitor ? '🟢 Available' : '🔴 Defective'"></span></td>
-                                        <td class="p-3"><span :class="item.comp_mouse_keyboard ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_mouse_keyboard ? '🟢 Available' : '🔴 Defective'"></span></td>
-                                        <td class="p-3"><span :class="item.comp_power_cable ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_power_cable ? '🟢 Available' : '🔴 Defective'"></span></td>
-                                        <td class="p-3"><span :class="item.comp_monitor_cable ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_monitor_cable ? '🟢 Available' : '🔴 Defective'"></span></td>
-                                        <td class="p-3"><span :class="item.comp_ups ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_ups ? '🟢 Available' : '🔴 Defective'"></span></td>
-                                        
+                                        <td class="p-3"><span :class="item.comp_cpu ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_cpu ? '🟢 Available' : '🔴 N/A'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_monitor ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_monitor ? '🟢 Available' : '🔴 N/A'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_mouse_keyboard ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_mouse_keyboard ? '🟢 Available' : '🔴 N/A'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_power_cable ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_power_cable ? '🟢 Available' : '🔴 N/A'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_monitor_cable ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_monitor_cable ? '🟢 Available' : '🔴 N/A'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_ups ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_ups ? '🟢 Available' : '🔴 N/A'"></span></td>
+                                      
                                         <td class="p-3 text-center" x-show="userRole === 'ADMIN'">
                                             <button @click="deleteInventoryNode(item.id, item.computer_name)" class="text-red-600 hover:text-red-800 font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
                                         </td>
