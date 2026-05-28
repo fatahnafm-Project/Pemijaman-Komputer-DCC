@@ -627,15 +627,36 @@
                     this.chatMessages = dataChat || [];
                     this.autoScrollChatBox();
 
+                    // Listen data chat insert secara real-time
                     this.chatRealtimeChannel = supabaseClient
                         .channel('room-dcc-channel')
                         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dcc_chats' }, payload => {
                             const pesanBaru = payload.new;
-                            this.chatMessages.push(pesanBaru);
-                            this.autoScrollChatBox();
+                            
+                            // 🛑 FILTER ANTI-DOUBLE PINTAR (BERDASARKAN KONTEN & WAKTU)
+                            const waktuPesanBaru = new Date(pesanBaru.created_at).getTime();
+                            
+                            const apakahPesanDouble = this.chatMessages.some(msg => {
+                                const waktuPesanLama = new Date(msg.created_at).getTime();
+                                
+                                // 1. Cek apakah jeda pengirimannya di bawah 5 detik
+                                const isWaktuBerdekatan = Math.abs(waktuPesanBaru - waktuPesanLama) < 5000;
+                                
+                                // 2. Cek apakah isi pesannya SAMA PERSIS (termasuk kode PC-nya)
+                                // Logika ini akan menangkap duplikat PC-10 vs PC-10 yang dikirim Fonnte
+                                const isKontenSamaPersis = msg.message_text.trim() === pesanBaru.message_text.trim();
+                                
+                                return isKontenSamaPersis && isWaktuBerdekatan;
+                            });
+                            
+                            // Jika TIDAK terdeteksi ganda, tampilkan ke layar
+                            if (!apakahPesanDouble) {
+                                this.chatMessages.push(pesanBaru);
+                                this.autoScrollChatBox();
 
-                            if (pesanBaru.sender_email !== this.session.user.email && this.currentMenu !== 'chat') {
-                                this.unreadCount++;
+                                if (pesanBaru.sender_email !== this.session.user.email && this.currentMenu !== 'chat') {
+                                    this.unreadCount++;
+                                }
                             }
                         })
                         .subscribe();
