@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col" x-data="appState()" x-init="initApp()">
 
@@ -30,14 +32,12 @@
                 <div class="text-right pt-1">
                     <a href="lupa-password.html" class="text-xs text-blue-600 hover:underline">Forgot Password?</a>
                 </div>
-                
                 <div class="flex items-center justify-between text-xs pt-1">
                     <label class="flex items-center text-slate-600 cursor-pointer">
                         <input type="checkbox" x-model="authForm.isSignUp" class="mr-2 rounded text-blue-600 border-slate-300">
                         Register as a new account
                     </label>
                 </div>
-
                 <button type="submit" :disabled="authLoading" class="w-full bg-blue-700 hover:bg-blue-800 disabled:bg-slate-400 text-white font-bold py-2.5 rounded-lg text-sm transition mt-2 shadow-sm">
                     <i class="fa-solid fa-right-to-bracket mr-2" x-show="!authLoading"></i>
                     <i class="fa-solid fa-spinner animate-spin mr-2" x-show="authLoading"></i>
@@ -62,11 +62,17 @@
                         <button @click="currentMenu = 'dashboard'" :class="currentMenu === 'dashboard' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
                             <i class="fa-solid fa-chart-pie mr-1.5"></i>Dashboard
                         </button>
+                        <button @click="currentMenu = 'stock'" :class="currentMenu === 'stock' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
+                            <i class="fa-solid fa-boxes-stacked mr-1.5"></i>Unit Stock
+                        </button>
                         <button @click="currentMenu = 'loan'" :class="currentMenu === 'loan' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
                             <i class="fa-solid fa-handshake mr-1.5"></i>Loan Menu
                         </button>
                         <button @click="currentMenu = 'service'" :class="currentMenu === 'service' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
-                            <i class="fa-solid fa-screwdriver-wrench mr-1.5"></i>Service & Maintenance
+                            <i class="fa-solid fa-screwdriver-wrench mr-1.5"></i>Service Log
+                        </button>
+                        <button @click="currentMenu = 'checking'" :class="currentMenu === 'checking' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
+                            <i class="fa-solid fa-square-check mr-1.5"></i>Checking Unit
                         </button>
                         <button @click="currentMenu = 'recap'" :class="currentMenu === 'recap' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
                             <i class="fa-solid fa-folder-open mr-1.5"></i>Recapitulation
@@ -85,18 +91,12 @@
                 </div>
             </div>
             <div x-show="mobileMenuOpen" x-transition class="md:hidden bg-blue-800 border-t border-blue-900 px-2 pt-2 pb-3 space-y-1">
-                <button @click="currentMenu = 'dashboard'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700">
-                    <i class="fa-solid fa-chart-pie w-5 mr-2"></i>Dashboard
-                </button>
-                <button @click="currentMenu = 'loan'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700">
-                    <i class="fa-solid fa-handshake w-5 mr-2"></i>Loan Menu
-                </button>
-                <button @click="currentMenu = 'service'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700">
-                    <i class="fa-solid fa-screwdriver-wrench w-5 mr-2"></i>Service & Maintenance
-                </button>
-                <button @click="currentMenu = 'recap'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700">
-                    <i class="fa-solid fa-folder-open w-5 mr-2"></i>Recapitulation
-                </button>
+                <button @click="currentMenu = 'dashboard'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-chart-pie w-5 mr-2"></i>Dashboard</button>
+                <button @click="currentMenu = 'stock'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-boxes-stacked w-5 mr-2"></i>Unit Stock</button>
+                <button @click="currentMenu = 'loan'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-handshake w-5 mr-2"></i>Loan Menu</button>
+                <button @click="currentMenu = 'service'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-screwdriver-wrench w-5 mr-2"></i>Service Log</button>
+                <button @click="currentMenu = 'checking'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-square-check w-5 mr-2"></i>Checking Unit</button>
+                <button @click="currentMenu = 'recap'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-folder-open w-5 mr-2"></i>Recapitulation</button>
             </div>
         </nav>
 
@@ -141,7 +141,6 @@
                             <p class="text-[11px] text-slate-500">Live operational data matching current month runtime pipeline (<span x-text="getCurrentMonthYear()"></span>)</p>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center">
@@ -167,7 +166,6 @@
                                 </table>
                             </div>
                         </div>
-
                         <div>
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center">
                                 <span class="w-2 h-2 rounded-full bg-amber-500 mr-1.5"></span>Active Repair Tickets
@@ -198,6 +196,55 @@
                 </div>
             </div>
 
+            <div x-show="currentMenu === 'stock'" x-transition class="space-y-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800"><i class="fa-solid fa-boxes-stacked text-blue-600 mr-2"></i>COMPUTER INVENTORY MATRIX</h2>
+                            <p class="text-xs text-slate-400">Total unit: <span class="font-bold text-slate-700" x-text="inventories.length"></span> unit full set</p>
+                        </div>
+                        <div x-show="userRole === 'ADMIN'" class="flex space-x-2">
+                            <button @click="addInventoryNode" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm cursor-pointer">
+                                <i class="fa-solid fa-plus mr-1"></i> Add New Node PC
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto border border-slate-100 rounded-lg">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                                <tr>
+                                    <th class="p-3">Computer ID</th>
+                                    <th class="p-3">CPU / Host</th>
+                                    <th class="p-3">Monitor</th>
+                                    <th class="p-3">Keyboard & Mouse</th>
+                                    <th class="p-3">Power Cable</th>
+                                    <th class="p-3">Monitor Cable</th>
+                                    <th class="p-3">UPS Grid</th>
+                                    <th class="p-3 text-center" x-show="userRole === 'ADMIN'">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium">
+                                <template x-for="item in inventories" :key="item.id">
+                                    <tr class="hover:bg-slate-50/50">
+                                        <td class="p-3 font-bold text-slate-800" x-text="item.computer_name"></td>
+                                        <td class="p-3"><span :class="item.comp_cpu ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_cpu ? '🟢 Available' : '🔴 Defective'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_monitor ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_monitor ? '🟢 Available' : '🔴 Defective'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_mouse_keyboard ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_mouse_keyboard ? '🟢 Available' : '🔴 Defective'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_power_cable ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_power_cable ? '🟢 Available' : '🔴 Defective'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_monitor_cable ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_monitor_cable ? '🟢 Available' : '🔴 Defective'"></span></td>
+                                        <td class="p-3"><span :class="item.comp_ups ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_ups ? '🟢 Available' : '🔴 Defective'"></span></td>
+                                        <td class="p-3 text-center" x-show="userRole === 'ADMIN'">
+                                            <button @click="deleteInventoryNode(item.id, item.computer_name)" class="text-red-600 hover:text-red-800 font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div x-show="currentMenu === 'loan'" x-transition class="max-w-2xl mx-auto">
                 <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="bg-blue-700 text-white p-4">
@@ -206,8 +253,13 @@
                     </div>
                     <form @submit.prevent="submitLoanForm" class="p-6 space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Computer Name / Node Reference ID</label>
-                            <input type="text" x-model="loanForm.computer_name" required placeholder="e.g. DCC-LAB08" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Select Computer ID</label>
+                            <select x-model="loanForm.computer_name" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">-- Choose Node --</option>
+                                <template x-for="item in inventories" :key="item.id">
+                                    <option :value="item.computer_name" x-text="item.computer_name"></option>
+                                </template>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1">Borrower's Accountable Committee Division</label>
@@ -235,7 +287,7 @@
                             </div>
                         </div>
                         <div class="flex justify-end pt-2">
-                            <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-lg text-xs transition shadow-sm">
+                            <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-lg text-xs transition shadow-sm cursor-pointer">
                                 <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Push Loan Payload
                             </button>
                         </div>
@@ -251,11 +303,16 @@
                     </div>
                     <form @submit.prevent="submitServiceForm" class="p-6 space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Computer Node ID</label>
-                            <input type="text" x-model="serviceForm.computer_name" required placeholder="e.g. DCC-LAB12" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Select Computer ID</label>
+                            <select x-model="serviceForm.computer_name" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <option value="">-- Choose Node --</option>
+                                <template x-for="item in inventories" :key="item.id">
+                                    <option :value="item.computer_name" x-text="item.computer_name"></option>
+                                </template>
+                            </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Detailed Technical Troubleshooting & Diagnostics Action Log</label>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Detailed Technical Troubleshooting Log Remarks</label>
                             <textarea rows="3" x-model="serviceForm.details" required placeholder="Detail specific terminal error codes, parts replacement actions, etc..." class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                         </div>
                         <div>
@@ -270,8 +327,44 @@
                             </div>
                         </div>
                         <div class="flex justify-end pt-2">
-                            <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2 rounded-lg text-xs transition shadow-sm">
+                            <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2 rounded-lg text-xs transition shadow-sm cursor-pointer">
                                 <i class="fa-solid fa-bug mr-2"></i>Upload Maintenance Ticket
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div x-show="currentMenu === 'checking'" x-transition class="max-w-2xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-indigo-700 text-white p-4">
+                        <h2 class="text-base font-bold flex items-center"><i class="fa-solid fa-square-check mr-2"></i>Hardware Completeness & Health Checking</h2>
+                        <p class="text-xs text-indigo-200 mt-0.5">Ubah komponen merah menjadi hijau kembali setelah diperbaiki/dilengkapi</p>
+                    </div>
+                    <form @submit.prevent="submitCheckingForm" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Select Computer Node ID</label>
+                            <select x-model="checkingForm.computer_name" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                <option value="">-- Choose Node --</option>
+                                <template x-for="item in inventories" :key="item.id">
+                                    <option :value="item.computer_name" x-text="item.computer_name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-2">Checklist Components to RESTORE (Turn to Green 🟢)</label>
+                            <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <template x-for="comp in componentList">
+                                    <label class="flex items-center space-x-2 text-xs text-slate-700 font-medium cursor-pointer">
+                                        <input type="checkbox" :value="comp" x-model="checkingForm.components" class="rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 w-4 h-4">
+                                        <span x-text="comp"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="bg-indigo-700 hover:bg-indigo-800 text-white font-bold px-5 py-2 rounded-lg text-xs transition shadow-sm cursor-pointer">
+                                <i class="fa-solid fa-heart-pulse mr-2"></i> Restore Component Status
                             </button>
                         </div>
                     </form>
@@ -284,8 +377,13 @@
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search text-xs"></i></span>
                         <input type="text" x-model="searchQuery" placeholder="Filter tables by Computer Node ID..." class="w-full border border-slate-300 rounded-lg pl-9 pr-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
-                    <div class="text-[11px] text-slate-400 text-right">
-                        Connected to Public Cloud Database Cloud Layer Instance.
+                    <div class="flex space-x-2">
+                        <button @click="downloadPDF('loans')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm flex items-center cursor-pointer">
+                            <i class="fa-solid fa-file-pdf mr-1.5"></i> Loans Report
+                        </button>
+                        <button @click="downloadPDF('services')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm flex items-center cursor-pointer">
+                            <i class="fa-solid fa-file-pdf mr-1.5"></i> Service Report
+                        </button>
                     </div>
                 </div>
 
@@ -295,7 +393,7 @@
                         <table class="w-full text-left text-xs border-collapse">
                             <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                                 <tr>
-                                    <th class="p-3">Computer ID</th><th class="p-3">Committee</th><th class="p-3">Timeline</th><th class="p-3">Inventory Elements</th><th class="p-3">Status</th><th class="p-3 text-center">Actions / Administrative Overrides</th>
+                                    <th class="p-3">Computer ID</th><th class="p-3">Committee</th><th class="p-3">Timeline</th><th class="p-3">Inventory Elements</th><th class="p-3">Status</th><th class="p-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -340,7 +438,7 @@
                         <table class="w-full text-left text-xs border-collapse">
                             <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                                 <tr>
-                                    <th class="p-3">Computer ID</th><th class="p-3">Date Logged</th><th class="p-3">Troubleshooting History Log Remarks</th><th class="p-3">Defective Components</th><th class="p-3">Status</th><th class="p-3 text-center">Actions / Administrative Overrides</th>
+                                    <th class="p-3">Computer ID</th><th class="p-3">Date Logged</th><th class="p-3">Troubleshooting History Log Remarks</th><th class="p-3">Defective Components</th><th class="p-3">Status</th><th class="p-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -385,13 +483,9 @@
     </footer>
 
     <script>
-        // ============================================
-        // FIXED SUPABASE INSTANTIATION LOGIC
-        // ============================================
         const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Zmlhdmh5eGlpa2xhbGNna2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA2MzEsImV4cCI6MjA5NTQ4NjYzMX0.Ywsf6lQ6InM6W35fiqyqIXil7V33X402VhRznUcMAFo";
         
-        // Perbaikan vital pada pemanggilan CDN global library Supabase
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         function appState() {
@@ -408,10 +502,12 @@
                 
                 loans: [],
                 services: [],
+                inventories: [],
 
                 loanForm: { computer_name: '', committee: '', start_date: '', end_date: '', components: [] },
                 serviceForm: { computer_name: '', details: '', components: [] },
-
+                checkingForm: { computer_name: '', components: [] },
+                
                 async initApp() {
                     const { data } = await supabaseClient.auth.getSession();
                     this.session = data.session;
@@ -420,20 +516,19 @@
                         await this.syncDatabaseState();
                     }
 
-                  supabaseClient.auth.onAuthStateChange(async (event, currentSession) => {
-    // Jika eventnya adalah pemulihan password, biarkan halaman ganti password yang bekerja
-                    if (event === 'PASSWORD_RECOVERY') {
-                        return; 
-                    }
-    
-                    this.session = currentSession;
-                    if (currentSession) {
-                        await this.fetchUserRole();
-                        await this.syncDatabaseState();
-                    } else {
-                        this.userRole = 'MEMBER';
-                        this.loans = [];
-                        this.services = [];
+                    supabaseClient.auth.onAuthStateChange(async (event, currentSession) => {
+                        if (event === 'PASSWORD_RECOVERY') {
+                            return; 
+                        }
+                        this.session = currentSession;
+                        if (currentSession) {
+                            await this.fetchUserRole();
+                            await this.syncDatabaseState();
+                        } else {
+                            this.userRole = 'MEMBER';
+                            this.loans = [];
+                            this.services = [];
+                            this.inventories = [];
                         }
                     });
                 },
@@ -454,6 +549,8 @@
                     this.loans = loanData || [];
                     const { data: serviceData } = await supabaseClient.from('services').select('*').order('id', { ascending: false });
                     this.services = serviceData || [];
+                    const { data: invData } = await supabaseClient.from('inventory').select('*').order('computer_name', { ascending: true });
+                    this.inventories = invData || [];
                 },
 
                 async handleAuth() {
@@ -496,6 +593,36 @@
                     this.serviceForm = { computer_name: '', details: '', components: [] };
                     await this.syncDatabaseState();
                     this.currentMenu = 'dashboard';
+                },
+
+                async submitCheckingForm() {
+                    const payload = {
+                        computer_name: this.checkingForm.computer_name,
+                        details: "Pengecekan kelengkapan & pemulihan status unit via Menu Checking.",
+                        components: this.checkingForm.components,
+                        status: "RESOLVED"
+                    };
+                    const { error } = await supabaseClient.from('services').insert([payload]);
+                    if (error) { alert(error.message); return; }
+                    alert("Kondisi komponen komputer berhasil dipulihkan menjadi Hijau!");
+                    this.checkingForm = { computer_name: '', components: [] };
+                    await this.syncDatabaseState();
+                    this.currentMenu = 'stock';
+                },
+
+                async addInventoryNode() {
+                    const code = prompt("Masukkan Kode Komputer Baru (Contoh: PC-22):");
+                    if(!code) return;
+                    const { error } = await supabaseClient.from('inventory').insert([{ computer_name: code.toUpperCase() }]);
+                    if(error) alert(error.message);
+                    else { alert("Node baru berhasil didaftarkan!"); await this.syncDatabaseState(); }
+                },
+                
+                async deleteInventoryNode(id, name) {
+                    if(!confirm(`Hapus ${name} secara permanen dari sistem inventaris?`)) return;
+                    const { error } = await supabaseClient.from('inventory').delete().eq('id', id);
+                    if(error) alert(error.message);
+                    else { await this.syncDatabaseState(); }
                 },
 
                 async approveLoan(id) {
@@ -541,7 +668,36 @@
                     }
                 },
 
-               getCurrentMonthYear() { 
+                downloadPDF(type) {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    
+                    doc.text(`REKAPITULASI DATA SYSTEM - DCC PLATFORM`, 14, 15);
+                    doc.setFontSize(10);
+                    doc.text(`Kategori: ${type.toUpperCase()} LOGS | Tanggal: ${new Date().toLocaleDateString()}`, 14, 22);
+
+                    let headers = [];
+                    let rows = [];
+
+                    if(type === 'loans') {
+                        headers = [['Computer ID', 'Committee Scope', 'Start Date', 'End Date', 'Status']];
+                        rows = this.loans.map(l => [l.computer_name, l.committee, l.start_date, l.end_date, l.status]);
+                    } else {
+                        headers = [['Computer ID', 'Log Date', 'Troubleshooting Remarks', 'Status']];
+                        rows = this.services.map(s => [s.computer_name, s.created_at.split('T')[0], s.details, s.status]);
+                    }
+
+                    doc.autoTable({
+                        head: headers,
+                        body: rows,
+                        startY: 28,
+                        theme: 'grid'
+                    });
+
+                    doc.save(`rekap-${type}-${new Date().toISOString().slice(0,10)}.pdf`);
+                },
+
+                getCurrentMonthYear() { 
                     const options = { month: 'long', year: 'numeric' };
                     return new Date().toLocaleDateString('en-US', options); 
                 },
