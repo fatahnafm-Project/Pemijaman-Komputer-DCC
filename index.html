@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Darussalam Computer Center - Protected Cloud System</title>
+    
+    <!-- 1. MERUBAH ICON WEB (FAVICON) DI ATAS TAB BROWSER -->
+    <link rel="icon" type="image/png" href="C:\DCClogo\Favicon.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -13,6 +17,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col" x-data="appState()" x-init="initApp()">
 
+    <!-- SCREEN LOGIN LAYER -->
     <div x-show="!session" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-[9999]">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
             <div class="bg-blue-700 text-white p-6 text-center">
@@ -33,21 +38,18 @@
                 <div class="text-right pt-1">
                     <a href="lupa-password.html" class="text-xs text-blue-600 hover:underline">Forgot Password?</a>
                 </div>
-                
                 <div class="flex items-center justify-between text-xs pt-1">
                     <label class="flex items-center text-slate-600 cursor-pointer">
                         <input type="checkbox" x-model="authForm.isSignUp" class="mr-2 rounded text-blue-600 border-slate-300">
                         Register as a new account
                     </label>
                 </div>
-
                 <div class="flex items-center text-xs pt-1" x-show="!authForm.isSignUp">
                     <label class="flex items-center text-slate-600 cursor-pointer font-medium">
                         <input type="checkbox" x-model="authForm.ingatSaya" class="mr-2 rounded text-blue-600 border-slate-300 focus:ring-blue-500 w-4 h-4">
                         <i class="fa-solid fa-user-lock mr-1 text-amber-500"></i> Stay Sign In (Ingat Akun Ini)
                     </label>
                 </div>
-
                 <button type="submit" :disabled="authLoading" class="w-full bg-blue-700 hover:bg-blue-800 disabled:bg-slate-400 text-white font-bold py-2.5 rounded-lg text-sm transition mt-2 shadow-sm">
                     <i class="fa-solid fa-right-to-bracket mr-2" x-show="!authLoading"></i>
                     <i class="fa-solid fa-spinner animate-spin mr-2" x-show="authLoading"></i>
@@ -57,6 +59,7 @@
         </div>
     </div>
 
+    <!-- MAIN DASHBOARD SYSTEM -->
     <div x-show="session" class="contents">
         <nav class="bg-blue-700 text-white shadow-md sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -321,8 +324,9 @@
                 </div>
             </div>
 
+            <!-- INTERFACE KOTAK ROOM CHAT (UPDATED WITH REPLY & DELETE ACTION) -->
             <div x-show="currentMenu === 'chat'" x-transition class="max-w-xl mx-auto">
-                <div class="bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden flex flex-col h-[500px]">
+                <div class="bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden flex flex-col h-[520px]">
                     <div class="bg-blue-700 text-white p-4 flex items-center justify-between">
                         <div class="flex items-center space-x-2">
                             <i class="fa-solid fa-comments text-amber-400 text-xl"></i>
@@ -333,14 +337,44 @@
                         </div>
                     </div>
                     
+                    <!-- Container Teks Balasan / Reply Indicator Box -->
+                    <div x-show="pesanDitargetReply" class="bg-amber-50 border-l-4 border-amber-500 p-2 text-xs flex justify-between items-center px-4 animate-fade-in shadow-inner">
+                        <div class="truncate max-w-[85%] text-slate-700">
+                            <span class="font-bold block text-[10px] text-amber-700">Membalas pesan <span x-text="samarkanNama(pesanDitargetReply.sender_email)"></span>:</span>
+                            <span class="italic" x-text="pesanDitargetReply.message_text"></span>
+                        </div>
+                        <button @click="batalReplyPesan()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-square-xmark text-base"></i></button>
+                    </div>
+
                     <div id="chatBoxContainer" class="flex-grow p-4 overflow-y-auto bg-slate-50 space-y-3 flex flex-col">
                         <template x-for="chat in chatMessages" :key="chat.id">
                             <div :class="chat.sender_email === session.user.email ? 'self-end bg-blue-600 text-white rounded-br-none' : 'self-start bg-white text-slate-800 border border-slate-100 rounded-bl-none'" 
-                                 class="max-w-[75%] p-3 rounded-2xl shadow-sm text-xs flex flex-col">
+                                 class="max-w-[80%] p-3 rounded-2xl shadow-sm text-xs flex flex-col relative group">
+                                
+                                <!-- Render Sub-Konten Struktur Reply Box di dalam Balasan Pesan -->
+                                <template x-if="chat.reply_to_text">
+                                    <div class="bg-black/10 text-[11px] p-2 rounded-lg mb-1.5 border-l-2 border-amber-400 font-medium italic opacity-90">
+                                        <span class="font-bold text-[9px] block uppercase not-italic tracking-wider text-amber-300">Balasan:</span>
+                                        <span x-text="chat.reply_to_text"></span>
+                                    </div>
+                                </template>
+
                                 <span class="font-bold text-[10px] block mb-1 opacity-75" 
                                       x-text="chat.sender_email === session.user.email ? 'Anda' : samarkanNama(chat.sender_email)"></span>
                                 <span class="break-words font-medium" x-text="chat.message_text"></span>
-                                <span class="text-[9px] text-right mt-1 opacity-50 block font-mono" x-text="chat.created_at && chat.created_at.includes('T') ? chat.created_at.split('T')[1].slice(0,5) : ''"></span>
+                                
+                                <div class="flex items-center justify-between mt-1 space-x-4">
+                                    <!-- Aksi Menu Tindakan Mikro (Grup Hover) -->
+                                    <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] mt-0.5">
+                                        <button @click="setTargetReplyPesan(chat)" title="Reply pesan ini" class="hover:text-amber-400 font-semibold cursor-pointer"><i class="fa-solid fa-reply"></i> Reply</button>
+                                        
+                                        <!-- Tombol Hapus Hanya Muncul Jika Pesan Milik Sendiri ATAU Role Admin -->
+                                        <template x-if="chat.sender_email === session.user.email || userRole === 'ADMIN'">
+                                            <button @click="hapusPesanObrolan(chat.id)" title="Hapus pesan" class="text-red-300 hover:text-red-500 font-semibold cursor-pointer"><i class="fa-solid fa-trash"></i> Delete</button>
+                                        </template>
+                                    </div>
+                                    <span class="text-[9px] text-right opacity-50 block font-mono self-end" x-text="chat.created_at && chat.created_at.includes('T') ? chat.created_at.split('T')[1].slice(0,5) : ''"></span>
+                                </div>
                             </div>
                         </template>
                     </div>
@@ -541,17 +575,12 @@
         &copy; 2026 Darussalam Computer Center • Secured with Distributed Architecture Cloud Systems
     </footer>
 
+    <!-- LOGIC CORE SYSTEM ARCHITECTURE (JAVASCRIPT) -->
     <script>
         const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Zmlhdmh5eGlpa2xhbGNna2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA2MzEsImV4cCI6MjA5NTQ4NjYzMX0.Ywsf6lQ6InM6W35fiqyqIXil7V33X402VhRznUcMAFo";
         
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-       auth: {
-           persistSession: true,      // Memaksa memori login tetap tersimpan
-           autoRefreshToken: true,    // Otomatis memperbarui token kunci secara berkala
-           storage: window.localStorage // Mengunci folder sesi ke penyimpanan lokal komputer
-       }
-   });
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         function appState() {
             return {
@@ -567,8 +596,10 @@
                 textChatBaru: '',
                 unreadCount: 0,
                 chatRealtimeChannel: null,
+                
+                // Tambahan State Fitur Reply
+                pesanDitargetReply: null,
 
-                // Form Login + Default Checkbox Stay Sign In Aktif (true)
                 authForm: { email: '', password: '', isSignUp: false, ingatSaya: true }, 
                 componentList: ['CPU/Computer', 'Monitor', 'Mouse & Keyboard', 'Power Cable', 'Monitor Cable', 'UPS'],
                 
@@ -627,36 +658,32 @@
                     this.chatMessages = dataChat || [];
                     this.autoScrollChatBox();
 
-                    // Listen data chat insert secara real-time
+                    // Real-time Event Listener (INSERT & DELETE)
                     this.chatRealtimeChannel = supabaseClient
                         .channel('room-dcc-channel')
-                        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dcc_chats' }, payload => {
-                            const pesanBaru = payload.new;
-                            
-                            // 🛑 FILTER ANTI-DOUBLE PINTAR (BERDASARKAN KONTEN & WAKTU)
-                            const waktuPesanBaru = new Date(pesanBaru.created_at).getTime();
-                            
-                            const apakahPesanDouble = this.chatMessages.some(msg => {
-                                const waktuPesanLama = new Date(msg.created_at).getTime();
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'dcc_chats' }, payload => {
+                            if (payload.eventType === 'INSERT') {
+                                const pesanBaru = payload.new;
                                 
-                                // 1. Cek apakah jeda pengirimannya di bawah 5 detik
-                                const isWaktuBerdekatan = Math.abs(waktuPesanBaru - waktuPesanLama) < 5000;
-                                
-                                // 2. Cek apakah isi pesannya SAMA PERSIS (termasuk kode PC-nya)
-                                // Logika ini akan menangkap duplikat PC-10 vs PC-10 yang dikirim Fonnte
-                                const isKontenSamaPersis = msg.message_text.trim() === pesanBaru.message_text.trim();
-                                
-                                return isKontenSamaPersis && isWaktuBerdekatan;
-                            });
-                            
-                            // Jika TIDAK terdeteksi ganda, tampilkan ke layar
-                            if (!apakahPesanDouble) {
-                                this.chatMessages.push(pesanBaru);
-                                this.autoScrollChatBox();
+                                // Smart Anti-Double Filter
+                                const waktuPesanBaru = new Date(pesanBaru.created_at).getTime();
+                                const apakahPesanDouble = this.chatMessages.some(msg => {
+                                    const waktuPesanLama = new Date(msg.created_at).getTime();
+                                    const isWaktuBerdekatan = Math.abs(waktuPesanBaru - waktuPesanLama) < 5000;
+                                    const isKontenSamaPersis = msg.message_text.trim() === pesanBaru.message_text.trim();
+                                    return isKontenSamaPersis && isWaktuBerdekatan;
+                                });
 
-                                if (pesanBaru.sender_email !== this.session.user.email && this.currentMenu !== 'chat') {
-                                    this.unreadCount++;
+                                if (!apakahPesanDouble) {
+                                    this.chatMessages.push(pesanBaru);
+                                    this.autoScrollChatBox();
+                                    if (pesanBaru.sender_email !== this.session.user.email && this.currentMenu !== 'chat') {
+                                        this.unreadCount++;
+                                    }
                                 }
+                            } else if (payload.eventType === 'DELETE') {
+                                // Realtime menghapus pesan di layar jika ada user yang mendelete
+                                this.chatMessages = this.chatMessages.filter(msg => msg.id !== payload.old.id);
                             }
                         })
                         .subscribe();
@@ -668,12 +695,23 @@
                     this.autoScrollChatBox();
                 },
 
+                // FITUR: MENYETEL REPLY TARGET
+                setTargetReplyPesan(chat) {
+                    this.pesanDitargetReply = chat;
+                },
+
+                batalReplyPesan() {
+                    this.pesanDitargetReply = null;
+                },
+
                 async kirimPesanObrolan() {
                     if (!this.textChatBaru.trim()) return;
 
                     const payloadPayload = {
                         sender_email: this.session.user.email,
-                        message_text: this.textChatBaru.trim()
+                        message_text: this.textChatBaru.trim(),
+                        // Jika sedang me-reply, masukkan isi teks pesan lama ke database
+                        reply_to_text: this.pesanDitargetReply ? this.pesanDitargetReply.message_text : null
                     };
 
                     const { error } = await supabaseClient.from('dcc_chats').insert([payloadPayload]);
@@ -681,6 +719,21 @@
                         alert("Gagal mengirim pesan: " + error.message);
                     } else {
                         this.textChatBaru = '';
+                        this.pesanDitargetReply = null; // Reset status bar balasan
+                    }
+                },
+
+                // FITUR: HAPUS PESAN YANG SUDAH TERKIRIM
+                async hapusPesanObrolan(id) {
+                    if (!confirm("Hapus pesan ini secara permanen dari ruang obrolan cloud?")) return;
+                    
+                    const { error } = await supabaseClient
+                        .from('dcc_chats')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) {
+                        alert("Gagal menghapus pesan: " + error.message);
                     }
                 },
 
@@ -725,13 +778,10 @@
                             alert("Account provisioned successfully! Check email for verification or log in directly if confirmed.");
                             this.authForm.isSignUp = false;
                         } else {
-                            // Membaca status centang untuk mengaktifkan Stay Sign In secara dinamis
                             const { error } = await supabaseClient.auth.signInWithPassword({ 
                                 email: this.authForm.email, 
                                 password: this.authForm.password,
-                                options: {
-                                    persistSession: this.authForm.ingatSaya // 👈 MEMBACA CHECKBOX SECARA DINAMIS!
-                                }
+                                options: { persistSession: this.authForm.ingatSaya }
                             });
                             if (error) throw error;
                             alert("Login Berhasil!");
