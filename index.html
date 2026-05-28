@@ -33,12 +33,21 @@
                 <div class="text-right pt-1">
                     <a href="lupa-password.html" class="text-xs text-blue-600 hover:underline">Forgot Password?</a>
                 </div>
+                
                 <div class="flex items-center justify-between text-xs pt-1">
                     <label class="flex items-center text-slate-600 cursor-pointer">
                         <input type="checkbox" x-model="authForm.isSignUp" class="mr-2 rounded text-blue-600 border-slate-300">
                         Register as a new account
                     </label>
                 </div>
+
+                <div class="flex items-center text-xs pt-1" x-show="!authForm.isSignUp">
+                    <label class="flex items-center text-slate-600 cursor-pointer font-medium">
+                        <input type="checkbox" x-model="authForm.ingatSaya" class="mr-2 rounded text-blue-600 border-slate-300 focus:ring-blue-500 w-4 h-4">
+                        <i class="fa-solid fa-user-lock mr-1 text-amber-500"></i> Stay Sign In (Ingat Akun Ini)
+                    </label>
+                </div>
+
                 <button type="submit" :disabled="authLoading" class="w-full bg-blue-700 hover:bg-blue-800 disabled:bg-slate-400 text-white font-bold py-2.5 rounded-lg text-sm transition mt-2 shadow-sm">
                     <i class="fa-solid fa-right-to-bracket mr-2" x-show="!authLoading"></i>
                     <i class="fa-solid fa-spinner animate-spin mr-2" x-show="authLoading"></i>
@@ -553,7 +562,8 @@
                 unreadCount: 0,
                 chatRealtimeChannel: null,
 
-                authForm: { email: '', password: '', isSignUp: false },
+                // Form Login + Default Checkbox Stay Sign In Aktif (true)
+                authForm: { email: '', password: '', isSignUp: false, ingatSaya: true }, 
                 componentList: ['CPU/Computer', 'Monitor', 'Mouse & Keyboard', 'Power Cable', 'Monitor Cable', 'UPS'],
                 
                 loans: [],
@@ -571,7 +581,7 @@
                     if (this.session) {
                         await this.fetchUserRole();
                         await this.syncDatabaseState();
-                        this.inisialisasiJalurChatRealtime(); // Jalankan listener chat cloud
+                        this.inisialisasiJalurChatRealtime();
                     }
 
                     supabaseClient.auth.onAuthStateChange(async (event, currentSession) => {
@@ -594,8 +604,6 @@
                 },
 
                 // ====== INTEGRATED ROOM CHAT FUNCTIONS =====
-                
-                // Menyamarkan email (Contoh: fatahnafm.project@gmail.com -> fatahnafm...)
                 samarkanNama(email) {
                     if (!email) return "User DCC";
                     let namaDepan = email.split('@')[0];
@@ -605,7 +613,6 @@
                     return namaDepan + "...";
                 },
 
-                // Menghubungkan WebSocket Realtime Supabase untuk Chat
                 async inisialisasiJalurChatRealtime() {
                     const { data: dataChat } = await supabaseClient
                         .from('dcc_chats')
@@ -614,7 +621,6 @@
                     this.chatMessages = dataChat || [];
                     this.autoScrollChatBox();
 
-                    // Listen data chat insert secara real-time
                     this.chatRealtimeChannel = supabaseClient
                         .channel('room-dcc-channel')
                         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dcc_chats' }, payload => {
@@ -622,7 +628,6 @@
                             this.chatMessages.push(pesanBaru);
                             this.autoScrollChatBox();
 
-                            // Trigger notifikasi jika user sedang di halaman menu lain
                             if (pesanBaru.sender_email !== this.session.user.email && this.currentMenu !== 'chat') {
                                 this.unreadCount++;
                             }
@@ -632,7 +637,7 @@
 
                 bukaMenuChat() {
                     this.currentMenu = 'chat';
-                    this.unreadCount = 0; // Bersihkan angka notifikasi
+                    this.unreadCount = 0; 
                     this.autoScrollChatBox();
                 },
 
@@ -693,11 +698,12 @@
                             alert("Account provisioned successfully! Check email for verification or log in directly if confirmed.");
                             this.authForm.isSignUp = false;
                         } else {
+                            // Membaca status centang untuk mengaktifkan Stay Sign In secara dinamis
                             const { error } = await supabaseClient.auth.signInWithPassword({ 
                                 email: this.authForm.email, 
                                 password: this.authForm.password,
                                 options: {
-                                    persistSession: true
+                                    persistSession: this.authForm.ingatSaya // 👈 MEMBACA CHECKBOX SECARA DINAMIS!
                                 }
                             });
                             if (error) throw error;
