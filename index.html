@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Darussalam Computer Center - Protected Cloud System</title>
     
-    <!-- 1. MERUBAH ICON WEB (FAVICON) DI ATAS TAB BROWSER -->
     <link rel="icon" type="image/png" href="Favicon.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,7 +16,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col" x-data="appState()" x-init="initApp()">
 
-    <!-- SCREEN LOGIN LAYER -->
     <div x-show="!session" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-[9999]">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
             <div class="bg-blue-700 text-white p-6 text-center">
@@ -59,7 +57,6 @@
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD SYSTEM -->
     <div x-show="session" class="contents">
         <nav class="bg-blue-700 text-white shadow-md sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,6 +68,7 @@
                             <span class="text-[10px] text-amber-300 font-mono font-bold uppercase" x-text="'Role: ' + userRole"></span>
                         </div>
                     </div>
+                    
                     <div class="hidden md:flex items-center space-x-2">
                         <button @click="currentMenu = 'dashboard'" :class="currentMenu === 'dashboard' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
                             <i class="fa-solid fa-chart-pie mr-1.5"></i>Dashboard
@@ -96,12 +94,22 @@
                         <button @click="currentMenu = 'recap'" :class="currentMenu === 'recap' ? 'bg-blue-800' : 'hover:bg-blue-600 text-blue-100'" class="px-3 py-2 rounded-lg text-xs font-medium transition">
                             <i class="fa-solid fa-folder-open mr-1.5"></i>Recapitulation
                         </button>
+                        
                         <div class="h-6 w-[1px] bg-blue-600 mx-2"></div>
-                        <button @click="handleLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition">
+                        
+                        <button @click="triggerManualRefresh()" :disabled="refreshLoading" title="Refresh Cloud Data" :class="refreshLoading ? 'bg-blue-800 text-blue-400' : 'bg-amber-500 hover:bg-amber-600 text-slate-900'" class="px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center h-8 w-8 cursor-pointer">
+                            <i class="fa-solid fa-rotate" :class="refreshLoading ? 'animate-spin' : ''"></i>
+                        </button>
+
+                        <button @click="handleLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition h-8 w-8 flex items-center justify-center">
                             <i class="fa-solid fa-power-off"></i>
                         </button>
                     </div>
+                    
                     <div class="md:hidden flex items-center space-x-3">
+                        <button @click="triggerManualRefresh()" :disabled="refreshLoading" class="text-amber-400 text-base p-1 focus:outline-none">
+                            <i class="fa-solid fa-rotate" :class="refreshLoading ? 'animate-spin' : ''"></i>
+                        </button>
                         <button @click="handleLogout" class="text-red-300 text-sm"><i class="fa-solid fa-power-off"></i></button>
                         <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-white hover:text-blue-200 focus:outline-none">
                             <i class="fa-solid text-xl" :class="mobileMenuOpen ? 'fa-xmark' : 'fa-bars'"></i>
@@ -109,6 +117,7 @@
                     </div>
                 </div>
             </div>
+            
             <div x-show="mobileMenuOpen" x-transition class="md:hidden bg-blue-800 border-t border-blue-900 px-2 pt-2 pb-3 space-y-1">
                 <button @click="currentMenu = 'dashboard'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-chart-pie w-5 mr-2"></i>Dashboard</button>
                 <button @click="currentMenu = 'stock'; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-700"><i class="fa-solid fa-boxes-stacked w-5 mr-2"></i>Unit Stock</button>
@@ -316,15 +325,16 @@
                             </div>
                         </div>
                         <div class="flex justify-end pt-2">
-                            <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-lg text-xs transition shadow-sm cursor-pointer">
-                                <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Push Loan Payload
+                            <button type="submit" :disabled="loanLoading" :class="loanLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-700 hover:bg-blue-800 cursor-pointer'" class="text-white font-bold px-5 py-2 rounded-lg text-xs transition shadow-sm flex items-center">
+                                <i class="fa-solid fa-spinner animate-spin mr-2" x-show="loanLoading"></i>
+                                <i class="fa-solid fa-cloud-arrow-up mr-2" x-show="!loanLoading"></i>
+                                <span x-text="loanLoading ? 'Processing Payload...' : 'Push Loan Payload'"></span>
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- INTERFACE KOTAK ROOM CHAT (UPDATED WITH REPLY & DELETE ACTION) -->
             <div x-show="currentMenu === 'chat'" x-transition class="max-w-xl mx-auto">
                 <div class="bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden flex flex-col h-[520px]">
                     <div class="bg-blue-700 text-white p-4 flex items-center justify-between">
@@ -337,7 +347,6 @@
                         </div>
                     </div>
                     
-                    <!-- Container Teks Balasan / Reply Indicator Box -->
                     <div x-show="pesanDitargetReply" class="bg-amber-50 border-l-4 border-amber-500 p-2 text-xs flex justify-between items-center px-4 animate-fade-in shadow-inner">
                         <div class="truncate max-w-[85%] text-slate-700">
                             <span class="font-bold block text-[10px] text-amber-700">Membalas pesan <span x-text="samarkanNama(pesanDitargetReply.sender_email)"></span>:</span>
@@ -351,7 +360,6 @@
                             <div :class="chat.sender_email === session.user.email ? 'self-end bg-blue-600 text-white rounded-br-none' : 'self-start bg-white text-slate-800 border border-slate-100 rounded-bl-none'" 
                                  class="max-w-[80%] p-3 rounded-2xl shadow-sm text-xs flex flex-col relative group">
                                 
-                                <!-- Render Sub-Konten Struktur Reply Box di dalam Balasan Pesan -->
                                 <template x-if="chat.reply_to_text">
                                     <div class="bg-black/10 text-[11px] p-2 rounded-lg mb-1.5 border-l-2 border-amber-400 font-medium italic opacity-90">
                                         <span class="font-bold text-[9px] block uppercase not-italic tracking-wider text-amber-300">Balasan:</span>
@@ -364,11 +372,9 @@
                                 <span class="break-words font-medium" x-text="chat.message_text"></span>
                                 
                                 <div class="flex items-center justify-between mt-1 space-x-4">
-                                    <!-- Aksi Menu Tindakan Mikro (Grup Hover) -->
                                     <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] mt-0.5">
                                         <button @click="setTargetReplyPesan(chat)" title="Reply pesan ini" class="hover:text-amber-400 font-semibold cursor-pointer"><i class="fa-solid fa-reply"></i> Reply</button>
                                         
-                                        <!-- Tombol Hapus Hanya Muncul Jika Pesan Milik Sendiri ATAU Role Admin -->
                                         <template x-if="chat.sender_email === session.user.email || userRole === 'ADMIN'">
                                             <button @click="hapusPesanObrolan(chat.id)" title="Hapus pesan" class="text-red-300 hover:text-red-500 font-semibold cursor-pointer"><i class="fa-solid fa-trash"></i> Delete</button>
                                         </template>
@@ -575,7 +581,6 @@
         &copy; 2026 Darussalam Computer Center • Secured with Distributed Architecture Cloud Systems
     </footer>
 
-    <!-- LOGIC CORE SYSTEM ARCHITECTURE (JAVASCRIPT) -->
     <script>
         const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Zmlhdmh5eGlpa2xhbGNna2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA2MzEsImV4cCI6MjA5NTQ4NjYzMX0.Ywsf6lQ6InM6W35fiqyqIXil7V33X402VhRznUcMAFo";
@@ -590,6 +595,8 @@
                 mobileMenuOpen: false,
                 searchQuery: '',
                 authLoading: false,
+                loanLoading: false, 
+                refreshLoading: false, // 👈 STATE UNTUK LOADING ICON SPIN REFRESH
 
                 // Properti State Fitur Room Chat
                 chatMessages: [],
@@ -640,6 +647,23 @@
                     });
                 },
 
+                // 🔄 MANFAATKAN KODE MANAJEMEN PULL DATA BERSIH TANPA RE-SUBMIT (ANTI-WA-DOUBLE)
+                async triggerManualRefresh() {
+                    if (this.refreshLoading) return;
+                    this.refreshLoading = true;
+                    try {
+                        await this.syncDatabaseState();
+                        if (this.currentMenu === 'chat') {
+                            const { data: dataChat } = await supabaseClient.from('dcc_chats').select('*').order('id', { ascending: true });
+                            this.chatMessages = dataChat || [];
+                        }
+                    } catch (e) {
+                        console.error("Refresh Fault: ", e);
+                    } finally {
+                        setTimeout(() => { this.refreshLoading = false; }, 400);
+                    }
+                },
+
                 // ====== INTEGRATED ROOM CHAT FUNCTIONS =====
                 samarkanNama(email) {
                     if (!email) return "User DCC";
@@ -682,7 +706,6 @@
                                     }
                                 }
                             } else if (payload.eventType === 'DELETE') {
-                                // Realtime menghapus pesan di layar jika ada user yang mendelete
                                 this.chatMessages = this.chatMessages.filter(msg => msg.id !== payload.old.id);
                             }
                         })
@@ -695,7 +718,6 @@
                     this.autoScrollChatBox();
                 },
 
-                // FITUR: MENYETEL REPLY TARGET
                 setTargetReplyPesan(chat) {
                     this.pesanDitargetReply = chat;
                 },
@@ -710,7 +732,6 @@
                     const payloadPayload = {
                         sender_email: this.session.user.email,
                         message_text: this.textChatBaru.trim(),
-                        // Jika sedang me-reply, masukkan isi teks pesan lama ke database
                         reply_to_text: this.pesanDitargetReply ? this.pesanDitargetReply.message_text : null
                     };
 
@@ -719,22 +740,14 @@
                         alert("Gagal mengirim pesan: " + error.message);
                     } else {
                         this.textChatBaru = '';
-                        this.pesanDitargetReply = null; // Reset status bar balasan
+                        this.pesanDitargetReply = null;
                     }
                 },
 
-                // FITUR: HAPUS PESAN YANG SUDAH TERKIRIM
                 async hapusPesanObrolan(id) {
                     if (!confirm("Hapus pesan ini secara permanen dari ruang obrolan cloud?")) return;
-                    
-                    const { error } = await supabaseClient
-                        .from('dcc_chats')
-                        .delete()
-                        .eq('id', id);
-
-                    if (error) {
-                        alert("Gagal menghapus pesan: " + error.message);
-                    }
+                    const { error } = await supabaseClient.from('dcc_chats').delete().eq('id', id);
+                    if (error) { alert("Gagal menghapus pesan: " + error.message); }
                 },
 
                 autoScrollChatBox() {
@@ -743,8 +756,6 @@
                         if (container) container.scrollTop = container.scrollHeight;
                     }, 150);
                 },
-
-                // ==========================================
 
                 async fetchUserRole() {
                     try {
@@ -797,13 +808,23 @@
                 },
 
                 async submitLoanForm() {
-                    const payload = { ...this.loanForm, computer_name: this.loanForm.computer_name.toUpperCase() };
-                    const { error } = await supabaseClient.from('loans').insert([payload]);
-                    if (error) { alert(error.message); return; }
-                    alert("Loan parameters synchronized directly onto the cloud layer!");
-                    this.loanForm = { computer_name: '', committee: '', start_date: '', end_date: '', components: [] };
-                    await this.syncDatabaseState();
-                    this.currentMenu = 'dashboard';
+                    if (this.loanLoading) return;
+                    this.loanLoading = true;
+                    try {
+                        const payload = { ...this.loanForm, computer_name: this.loanForm.computer_name.toUpperCase() };
+                        const { error } = await supabaseClient.from('loans').insert([payload]);
+                        
+                        if (error) { alert(error.message); return; }
+                        
+                        alert("Loan parameters synchronized directly onto the cloud layer!");
+                        this.loanForm = { computer_name: '', committee: '', start_date: '', end_date: '', components: [] };
+                        await this.syncDatabaseState();
+                        this.currentMenu = 'dashboard';
+                    } catch (err) {
+                        console.error(err);
+                    } finally {
+                        this.loanLoading = false;
+                    }
                 },
 
                 async submitServiceForm() {
@@ -892,7 +913,6 @@
                 downloadPDF(type) {
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF();
-                    
                     doc.text(`REKAPITULASI DATA SYSTEM - DCC PLATFORM`, 14, 15);
                     doc.setFontSize(10);
                     doc.text(`Kategori: ${type.toUpperCase()} LOGS | Tanggal: ${new Date().toLocaleDateString()}`, 14, 22);
@@ -908,13 +928,7 @@
                         rows = this.services.map(s => [s.computer_name, s.created_at.split('T')[0], s.details, s.status]);
                     }
 
-                    doc.autoTable({
-                        head: headers,
-                        body: rows,
-                        startY: 28,
-                        theme: 'grid'
-                    });
-
+                    doc.autoTable({ head: headers, body: rows, startY: 28, theme: 'grid' });
                     doc.save(`rekap-${type}-${new Date().toISOString().slice(0,10)}.pdf`);
                 },
 
