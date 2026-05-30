@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Darussalam Computer Center - Protected Cloud System</title>
     
-    <link rel="icon" type="image/png" href="Favicon.png">
+    <link type="image/png" rel="icon" href="Favicon.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -180,6 +180,7 @@
                         </div>
                     </div>
                 </template>
+
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
                     <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center">
                         <i class="fa-solid fa-bolt text-amber-500 mr-2"></i>Quick Navigation Engine
@@ -410,14 +411,12 @@
                                     </div>
                                 </template>
 
-                                <span class="font-bold text-[10px] block mb-1 opacity-75" 
-                                      x-text="chat.sender_email === session.user.email ? 'Anda' : samarkanNama(chat.sender_email)"></span>
+                                <span class="font-bold text-[10px] block mb-1 opacity-75" x-text="chat.sender_email === session.user.email ? 'Anda' : samarkanNama(chat.sender_email)"></span>
                                 <span class="break-words font-medium" x-text="chat.message_text"></span>
                                 
                                 <div class="flex items-center justify-between mt-1 space-x-4">
                                     <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] mt-0.5">
                                         <button @click="setTargetReplyPesan(chat)" title="Reply pesan ini" class="hover:text-amber-400 font-semibold cursor-pointer"><i class="fa-solid fa-reply"></i> Reply</button>
-                                        
                                         <template x-if="chat.sender_email === session.user.email || userRole === 'ADMIN'">
                                             <button @click="hapusPesanObrolan(chat.id)" title="Hapus pesan" class="text-red-300 hover:text-red-500 font-semibold cursor-pointer"><i class="fa-solid fa-trash"></i> Delete</button>
                                         </template>
