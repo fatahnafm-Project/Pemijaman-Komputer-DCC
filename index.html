@@ -214,9 +214,9 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 mb-4">
                         <div>
                             <h2 class="text-base font-bold text-slate-800 flex items-center">
-                                <i class="fa-solid fa-tower-broadcast text-blue-600 mr-2 animate-pulse"></i>MONITORING THIS MONTH
+                                <i class="fa-solid fa-tower-broadcast text-blue-600 mr-2 animate-pulse"></i>MONITORING LIVE PIPELINE
                             </h2>
-                            <p class="text-[11px] text-slate-500">Live operational data matching current month runtime pipeline (<span x-text="getCurrentMonthYear()"></span>)</p>
+                            <p class="text-[11px] text-slate-500">Live operational data matching runtime pipeline (<span x-text="getCurrentMonthYear()"></span>)</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -230,10 +230,10 @@
                                         <tr><th class="p-2.5">Computer ID</th><th class="p-2.5">Committee</th><th class="p-2.5">Due Date</th></tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100">
-                                        <template x-if="filteredLoansThisMonth.length === 0">
-                                            <tr><td colspan="3" class="p-3 text-center text-slate-400 italic">No approved data found this month.</td></tr>
+                                        <template x-if="loans.filter(l => l.status === 'APPROVED').length === 0">
+                                            <tr><td colspan="3" class="p-3 text-center text-slate-400 italic">No approved data found in this pipeline.</td></tr>
                                         </template>
-                                        <template x-for="loan in filteredLoansThisMonth" :key="loan.id">
+                                        <template x-for="loan in loans.filter(l => l.status === 'APPROVED')" :key="loan.id">
                                             <tr class="hover:bg-slate-50/50">
                                                 <td class="p-2.5 font-bold text-slate-700" x-text="loan.computer_name"></td>
                                                 <td class="p-2.5 text-slate-600" x-text="loan.committee"></td>
@@ -254,10 +254,10 @@
                                         <tr><th class="p-2.5">Computer ID</th><th class="p-2.5">Issue Log</th><th class="p-2.5">Status</th></tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100">
-                                        <template x-if="filteredServicesThisMonth.length === 0">
+                                        <template x-if="services.filter(s => s.status === 'PENDING').length === 0">
                                             <tr><td colspan="3" class="p-3 text-center text-slate-400 italic">No open service tickets active.</td></tr>
                                         </template>
-                                        <template x-for="srv in filteredServicesThisMonth" :key="srv.id">
+                                        <template x-for="srv in services.filter(s => s.status === 'PENDING')" :key="srv.id">
                                             <tr class="hover:bg-slate-50/50">
                                                 <td class="p-2.5 font-bold text-slate-700" x-text="srv.computer_name"></td>
                                                 <td class="p-2.5 text-slate-600 truncate max-w-[140px]" x-text="srv.details"></td>
@@ -304,10 +304,10 @@
                             </thead>
                             <tbody class="divide-y divide-slate-100 font-medium">
                                 <template x-for="item in inventories" :key="item.id">
-                                    <tr class="hover:bg-slate-50/50">
-                                        <td class="p-3 font-bold">
+                                    <tr class="hover:bg-slate-100/70 transition-colors duration-150">
+                                        <td class="p-3 font-bold cursor-pointer" @click="showInventoryDetail(item.computer_name)">
                                             <span :class="item.is_available ? 'text-slate-800 bg-slate-100 px-2 py-1 rounded-md' : 'text-red-800 bg-red-100 px-2 py-1 rounded-md animate-pulse'" 
-                                                  x-text="item.computer_name + (item.is_available ? '' : ' (🔴 Borrowed)')">
+                                                  x-text="item.computer_name + (item.is_available ? ' 📄' : ' (🔴 Borrowed) 📄')">
                                             </span>
                                         </td>
                                         <td class="p-3"><span :class="item.comp_cpu ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px]" x-text="item.comp_cpu ? '🟢 Available' : '🔴 N/A'"></span></td>
@@ -338,7 +338,7 @@
                             <label class="block text-xs font-bold text-slate-600 mb-1">Select Computer ID</label>
                             <select x-model="loanForm.computer_name" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 <option value="">-- Choose Node --</option>
-                                <template x-for="item in inventories" :key="item.id">
+                                <template x-for="item in inventories.filter(i => i.is_available)" :key="item.id">
                                     <option :value="item.computer_name" x-text="item.computer_name"></option>
                                 </template>
                             </select>
@@ -414,14 +414,16 @@
                                 <span class="font-bold text-[10px] block mb-1 opacity-75" x-text="chat.sender_email === session.user.email ? 'Anda' : samarkanNama(chat.sender_email)"></span>
                                 <span class="break-words font-medium" x-text="chat.message_text"></span>
                                 
-                                <div class="flex items-center justify-between mt-1 space-x-4">
-                                    <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] mt-0.5">
-                                        <button @click="setTargetReplyPesan(chat)" title="Reply pesan ini" class="hover:text-amber-400 font-semibold cursor-pointer"><i class="fa-solid fa-reply"></i> Reply</button>
-                                        <template x-if="chat.sender_email === session.user.email || userRole === 'ADMIN'">
-                                            <button @click="hapusPesanObrolan(chat.id)" title="Hapus pesan" class="text-red-300 hover:text-red-500 font-semibold cursor-pointer"><i class="fa-solid fa-trash"></i> Delete</button>
-                                        </template>
+                                <div class="flex flex-col mt-2 border-t border-black/5 pt-1">
+                                    <div class="flex items-center justify-between space-x-4">
+                                        <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px]">
+                                            <button @click="setTargetReplyPesan(chat)" title="Reply pesan ini" class="hover:text-amber-400 font-semibold cursor-pointer"><i class="fa-solid fa-reply"></i> Reply</button>
+                                            <template x-if="chat.sender_email === session.user.email || userRole === 'ADMIN'">
+                                                <button @click="hapusPesanObrolan(chat.id)" title="Hapus pesan" class="text-red-300 hover:text-red-500 font-semibold cursor-pointer"><i class="fa-solid fa-trash"></i> Delete</button>
+                                            </template>
+                                        </div>
+                                        <span class="text-[9px] opacity-60 font-medium tracking-wide text-right block ml-auto" x-text="formatChatTimestamp(chat.created_at)"></span>
                                     </div>
-                                    <span class="text-[9px] text-right opacity-50 block font-mono self-end" x-text="chat.created_at && chat.created_at.includes('T') ? chat.created_at.split('T')[1].slice(0,5) : ''"></span>
                                 </div>
                             </div>
                         </template>
@@ -619,10 +621,6 @@
         </main>
     </div>
 
-    <footer class="bg-slate-800 text-slate-400 text-center py-3 text-[11px] border-t border-slate-700 mt-auto">
-        &copy; 2026 Darussalam Computer Center • Secured with Distributed Architecture Cloud Systems
-    </footer>
-
     <script>
         const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Zmlhdmh5eGlpa2xhbGNna2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA2MzEsImV4cCI6MjA5NTQ4NjYzMX0.Ywsf6lQ6InM6W35fiqyqIXil7V33X402VhRznUcMAFo";
@@ -709,6 +707,30 @@
                         namaDepan = namaDepan.split('.')[0];
                     }
                     return namaDepan + "...";
+                },
+
+                // 🟢 NEW ENGINE COMPONENT: ADVANCED LOCALE INDONESIAN CHAT TIMESTAMP FORMATTER
+                formatChatTimestamp(isoString) {
+                    if (!isoString) return "";
+                    try {
+                        const dateObj = new Date(isoString);
+                        
+                        // Konfigurasi konversi penanggalan bahasa indonesia dinamis
+                        const options = { 
+                            weekday: 'long', 
+                            day: 'numeric', 
+                            month: 'long', 
+                            year: 'numeric' 
+                        };
+                        const formatHariTanggal = dateObj.toLocaleDateString('id-ID', options);
+                        
+                        const jam = String(dateObj.getHours()).padStart(2, '0');
+                        const menit = String(dateObj.getMinutes()).padStart(2, '0');
+                        
+                        return `${formatHariTanggal} - ${jam}:${menit}`;
+                    } catch (err) {
+                        return "";
+                    }
                 },
 
                 async inisialisasiJalurChatRealtime() {
@@ -841,8 +863,24 @@
                     this.session = null;
                 },
 
+                showInventoryDetail(computerName) {
+                    const activeLoan = this.loans.find(l => l.computer_name.toUpperCase() === computerName.toUpperCase());
+                    if (activeLoan) {
+                        alert(`📄 INFORMASI DETAIL DISTRIBUSI UNIT:\n\n` +
+                              `• Computer ID: ${activeLoan.computer_name}\n` +
+                              `• Status: 🔴 SEDANG DIPINJAM\n` +
+                              `• Divisi/Kepanitiaan: ${activeLoan.committee}\n` +
+                              `• Tanggal Mulai: ${activeLoan.start_date}\n` +
+                              `• Batas Pengembalian: ${activeLoan.end_date}`);
+                    } else {
+                        alert(`📄 INFORMASI DETAIL DISTRIBUSI UNIT:\n\n` +
+                              `• Computer ID: ${computerName.toUpperCase()}\n` +
+                              `• Status: 🟢 TERSEDIA DI UNIT STOCK (READY)`);
+                    }
+                },
+
                 async closeLoanFromDashboard(loan) {
-                    if (!confirm(`Konfirmasi pengembalian ${loan.computer_name}? Tindakan ini akan mengarahkan Anda ke Menu Checking untuk verifikasi fisik komponen.`)) return;
+                    if (!confirm(`Konfirmasi pengembalian ${loan.computer_name}? Tindakan ini akan mengarahkan Anda ke Menu Checking untuk memulihkan kelengkapan komponen.`)) return;
                     
                     this.checkingForm.computer_name = loan.computer_name;
                     this.currentMenu = 'checking';
@@ -1013,10 +1051,10 @@
                     return new Date().toLocaleDateString('en-US', options); 
                 },
                 get filteredLoansThisMonth() {
-                    return this.loans.filter(l => l.status === 'APPROVED' && (l.start_date.includes('-05-') || l.end_date.includes('-05-')));
+                    return this.loans.filter(l => l.status === 'APPROVED');
                 },
                 get filteredServicesThisMonth() {
-                    return this.services.filter(s => s.status === 'PENDING' && s.created_at.includes('-05-'));
+                    return this.services.filter(s => s.status === 'PENDING');
                 },
                 get filteredLoans() {
                     if (!this.searchQuery.trim()) return this.loans;
