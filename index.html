@@ -138,18 +138,18 @@
             
             <div x-show="currentMenu === 'dashboard'" x-transition class="space-y-6">
                 
-                <template x-if="loans.filter(l => l.status === 'APPROVED' && new Date(l.end_date).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0)).length > 0">
+                <template x-if="loans.filter(l => l.status === 'APPROVED' && new Date(l.end_date).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && isUnitBorrowed(l.computer_name)).length > 0">
                     <div class="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-sm space-y-3">
                         <div class="flex items-center justify-between border-b border-amber-200 pb-2">
                             <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center">
                                 <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2 animate-bounce"></i> 
                                 Batas Waktu Pengembalian Hari Ini (<span x-text="new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})"></span>)
                             </h3>
-                            <span class="text-[10px] bg-amber-200 text-amber-800 font-bold px-2 py-0.5 rounded-full" x-text="loans.filter(l => l.status === 'APPROVED' && new Date(l.end_date).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0)).length + ' Unit Menunggu Tindakan'"></span>
+                            <span class="text-[10px] bg-amber-200 text-amber-800 font-bold px-2 py-0.5 rounded-full" x-text="loans.filter(l => l.status === 'APPROVED' && new Date(l.end_date).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && isUnitBorrowed(l.computer_name)).length + ' Unit Menunggu Tindakan'"></span>
                         </div>
                         
                         <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
-                            <template x-for="loan in loans.filter(l => l.status === 'APPROVED' && new Date(l.end_date).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0))" :key="loan.id">
+                            <template x-for="loan in loans.filter(l => l.status === 'APPROVED' && new Date(l.end_date).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && isUnitBorrowed(l.computer_name))" :key="loan.id">
                                 <div class="bg-white border border-slate-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition hover:border-amber-400">
                                     <div>
                                         <div class="flex items-center space-x-2">
@@ -230,10 +230,10 @@
                                         <tr><th class="p-2.5">Computer ID</th><th class="p-2.5">Committee</th><th class="p-2.5">Due Date</th></tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100">
-                                        <template x-if="loans.filter(l => l.status === 'APPROVED').length === 0">
+                                        <template x-if="loans.filter(l => l.status === 'APPROVED' && isUnitBorrowed(l.computer_name)).length === 0">
                                             <tr><td colspan="3" class="p-3 text-center text-slate-400 italic">No approved data found in this pipeline.</td></tr>
                                         </template>
-                                        <template x-for="loan in loans.filter(l => l.status === 'APPROVED')" :key="loan.id">
+                                        <template x-for="loan in loans.filter(l => l.status === 'APPROVED' && isUnitBorrowed(l.computer_name))" :key="loan.id">
                                             <tr class="hover:bg-slate-50/50">
                                                 <td class="p-2.5 font-bold text-slate-700" x-text="loan.computer_name"></td>
                                                 <td class="p-2.5 text-slate-600" x-text="loan.committee"></td>
@@ -621,6 +621,10 @@
         </main>
     </div>
 
+    <footer class="bg-slate-800 text-slate-400 text-center py-3 text-[11px] border-t border-slate-700 mt-auto">
+        &copy; 2026 Darussalam Computer Center • Secured with Distributed Architecture Cloud Systems
+    </footer>
+
     <script>
         const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Zmlhdmh5eGlpa2xhbGNna2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA2MzEsImV4cCI6MjA5NTQ4NjYzMX0.Ywsf6lQ6InM6W35fiqyqIXil7V33X402VhRznUcMAFo";
@@ -709,24 +713,14 @@
                     return namaDepan + "...";
                 },
 
-                // 🟢 NEW ENGINE COMPONENT: ADVANCED LOCALE INDONESIAN CHAT TIMESTAMP FORMATTER
                 formatChatTimestamp(isoString) {
                     if (!isoString) return "";
                     try {
                         const dateObj = new Date(isoString);
-                        
-                        // Konfigurasi konversi penanggalan bahasa indonesia dinamis
-                        const options = { 
-                            weekday: 'long', 
-                            day: 'numeric', 
-                            month: 'long', 
-                            year: 'numeric' 
-                        };
+                        const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
                         const formatHariTanggal = dateObj.toLocaleDateString('id-ID', options);
-                        
                         const jam = String(dateObj.getHours()).padStart(2, '0');
                         const menit = String(dateObj.getMinutes()).padStart(2, '0');
-                        
                         return `${formatHariTanggal} - ${jam}:${menit}`;
                     } catch (err) {
                         return "";
@@ -865,7 +859,7 @@
 
                 showInventoryDetail(computerName) {
                     const activeLoan = this.loans.find(l => l.computer_name.toUpperCase() === computerName.toUpperCase());
-                    if (activeLoan) {
+                    if (activeLoan && this.isUnitBorrowed(computerName)) {
                         alert(`📄 INFORMASI DETAIL DISTRIBUSI UNIT:\n\n` +
                               `• Computer ID: ${activeLoan.computer_name}\n` +
                               `• Status: 🔴 SEDANG DIPINJAM\n` +
@@ -879,12 +873,21 @@
                     }
                 },
 
+                // 🔄 UTILITY ENGINE: MENGECEK APAKAH UNIT BENAR-BENAR SEDANG DIPINJAM DI INVENTORY
+                isUnitBorrowed(computerName) {
+                    const matchedUnit = this.inventories.find(i => i.computer_name.toUpperCase() === computerName.toUpperCase());
+                    // Jika unit ditemukan dan is_available bernilai FALSE, artinya unit BENAR sedang dipinjam
+                    return matchedUnit ? !matchedUnit.is_available : false;
+                },
+
+                // 🟢 RE-SYNCRONIZED ENGINE FOR CLOSING FROM DASHBOARD OVERDUE LIST
                 async closeLoanFromDashboard(loan) {
                     if (!confirm(`Konfirmasi pengembalian ${loan.computer_name}? Tindakan ini akan mengarahkan Anda ke Menu Checking untuk memulihkan kelengkapan komponen.`)) return;
                     
                     this.checkingForm.computer_name = loan.computer_name;
                     this.currentMenu = 'checking';
                     
+                    // Bersihkan transaksi peminjaman aktif dari antrean database cloud
                     await supabaseClient.from('loans').delete().eq('id', loan.id);
                     await this.syncDatabaseState();
                 },
@@ -951,16 +954,25 @@
                     this.currentMenu = 'dashboard';
                 },
 
+                // 🛠️ PERBAIKAN UTAMA: SUBMIT CHECKING SEKALIGUS MENGHAPUS SISA DATA PINJAMAN DI DASHBOARD
                 async submitCheckingForm() {
-                    const payload = {
+                    // 1. Catat log pemeriksaan hardware ke tabel services
+                    const servicePayload = {
                         computer_name: this.checkingForm.computer_name,
                         details: "Pengecekan kelengkapan & pemulihan status unit via Menu Checking.",
                         components: this.checkingForm.components,
                         status: "RESOLVED"
                     };
-                    const { error } = await supabaseClient.from('services').insert([payload]);
-                    if (error) { alert(error.message); return; }
-                    alert("Kondisi komponen komputer berhasil dipulihkan menjadi Hijau!");
+                    const { error: serviceErr } = await supabaseClient.from('services').insert([servicePayload]);
+                    if (serviceErr) { alert(serviceErr.message); return; }
+                    
+                    // 2. Bersihkan otomatis transaksi peminjaman PC ini dari tabel loans jika masih tersisa
+                    await supabaseClient
+                        .from('loans')
+                        .delete()
+                        .eq('computer_name', this.checkingForm.computer_name.toUpperCase());
+
+                    alert("Kondisi komponen komputer berhasil dipulihkan menjadi Hijau & list Dashboard dibersihkan!");
                     this.checkingForm = { computer_name: '', components: [] };
                     await this.syncDatabaseState();
                     this.currentMenu = 'stock';
@@ -1049,12 +1061,6 @@
                 getCurrentMonthYear() { 
                     const options = { month: 'long', year: 'numeric' };
                     return new Date().toLocaleDateString('en-US', options); 
-                },
-                get filteredLoansThisMonth() {
-                    return this.loans.filter(l => l.status === 'APPROVED');
-                },
-                get filteredServicesThisMonth() {
-                    return this.services.filter(s => s.status === 'PENDING');
                 },
                 get filteredLoans() {
                     if (!this.searchQuery.trim()) return this.loans;
