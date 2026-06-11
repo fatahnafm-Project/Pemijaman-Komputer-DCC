@@ -13,6 +13,8 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col" x-data="appState()" x-init="initApp()">
 
@@ -542,23 +544,30 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-100 flex items-center justify-between">
+                <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <span class="text-xs text-slate-500 font-medium">
                         Menampilkan <span class="font-bold text-blue-700" x-text="filteredLoans.length"></span> Riwayat Peminjaman & <span class="font-bold text-emerald-700" x-text="filteredServices.length"></span> Log Maintenance.
                     </span>
-                    <div class="flex space-x-2">
+                    <div class="flex flex-wrap gap-2">
+                        <button @click="downloadExcel('loans')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm flex items-center cursor-pointer">
+                            <i class="fa-solid fa-file-excel mr-1.5"></i> Loans Excel
+                        </button>
+                        <button @click="downloadExcel('services')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm flex items-center cursor-pointer">
+                            <i class="fa-solid fa-file-excel mr-1.5"></i> Service Excel
+                        </button>
+                        <div class="h-6 w-[1px] bg-slate-200 hidden sm:block mx-1"></div>
                         <button @click="downloadPDF('loans')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm flex items-center cursor-pointer">
-                            <i class="fa-solid fa-file-pdf mr-1.5"></i> Loans Report
+                            <i class="fa-solid fa-file-pdf mr-1.5"></i> Loans PDF
                         </button>
                         <button @click="downloadPDF('services')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm flex items-center cursor-pointer">
-                            <i class="fa-solid fa-file-pdf mr-1.5"></i> Service Report
+                            <i class="fa-solid fa-file-pdf mr-1.5"></i> Service PDF
                         </button>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
                     <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center"><i class="fa-solid fa-clock-history text-blue-500 mr-2"></i>Loan Operations History Database</h3>
-                    <div class="overflow-x-auto border border-slate-100 rounded-lg">
+                    <div class="overflow-x-auto rounded-lg">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                                 <tr>
@@ -603,7 +612,7 @@
 
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
                     <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center"><i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i>Structural Defects & Maintenance Log Summary</h3>
-                    <div class="overflow-x-auto border border-slate-100 rounded-lg">
+                    <div class="overflow-x-auto rounded-lg">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                                 <tr>
@@ -647,6 +656,10 @@
         </main>
     </div>
 
+    <footer class="bg-slate-800 text-slate-400 text-center py-3 text-[11px] border-t border-slate-700 mt-auto">
+        &copy; 2026 Darussalam Computer Center • Secured with Distributed Architecture Cloud Systems
+    </footer>
+
     <script>
         const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Zmlhdmh5eGlpa2xhbGNna2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA2MzEsImV4cCI6MjA5NTQ4NjYzMX0.Ywsf6lQ6InM6W35fiqyqIXil7V33X402VhRznUcMAFo";
@@ -664,7 +677,7 @@
                 loanLoading: false, 
                 refreshLoading: false,
 
-                // 🛠️ NEW VARIABLE STATE FOR CHRONO FILTERS (STATE FILTER BARU)
+                // FILTER STATES
                 filterStartDate: '',
                 filterEndDate: '',
 
@@ -718,7 +731,7 @@
                     if (this.refreshLoading) return;
                     this.refreshLoading = true;
                     try {
-                        this.resetRecapFilters(); // 👈 KEMBALIKAN KE DEFAULT SAAT REFRESH DIKLIK
+                        this.resetRecapFilters();
                         await this.syncDatabaseState();
                         if (this.currentMenu === 'chat') {
                             const { data: dataChat } = await supabaseClient.from('dcc_chats').select('*').order('id', { ascending: true });
@@ -836,12 +849,12 @@
 
                 async fetchUserRole() {
                     try {
-                        const { data: userProfile, error } = await supabaseClient
+                        const { data, error } = await supabaseClient
                             .from('profiles')
                             .select('role')
                             .eq('id', this.session.user.id)
                             .single();
-                        if (userProfile) this.userRole = userProfile.role;
+                        if (data) this.userRole = data.role;
                     } catch (e) { console.error('Error establishing account role:', e); }
                 },
 
@@ -905,7 +918,6 @@
                     return matchedUnit ? !matchedUnit.is_available : false;
                 },
 
-                // 🟢 NEW CONTROLLER: LOGIKAL UTILITY UNTUK BULAN INI & CLEAR FILTERS
                 setFilterThisMonth() {
                     const now = new Date();
                     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -936,7 +948,6 @@
                         alert("Batas waktu tambahan sudah pernah digunakan untuk peminjaman ini!");
                         return;
                     }
-                    
                     if (!confirm(`Berikan Injury Time +3 hari untuk unit ${loan.computer_name}? Batas waktu pada rekapitulasi akan otomatis diperpanjang.`)) return;
                     
                     const currentEndDate = new Date(loan.end_date);
@@ -1065,7 +1076,7 @@
                     }
                 },
 
-                // 🛠️ PERBAIKAN: PDF REPORT DIKUNCI PAS MENGIKUTI HASIL FILTER LAYAR realtime 🛠️
+                // 🛠️ PERBAIKAN: PDF REPORT SEJAJAR MENGIKUTI FILTER LIVE SCREEN REALTIME
                 downloadPDF(type) {
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF();
@@ -1077,11 +1088,11 @@
                     let rows = [];
 
                     if(type === 'loans') {
-                        targetData = this.filteredLoans; // 👈 Mengambil data yang lolos filter saja
+                        targetData = this.filteredLoans;
                         headers = [['Computer ID', 'Committee Scope', 'Start Date', 'End Date', 'Status']];
                         rows = targetData.map(l => [l.computer_name, l.committee, l.start_date, l.end_date, l.status]);
                     } else {
-                        targetData = this.filteredServices; // 👈 Mengambil data yang lolos filter saja
+                        targetData = this.filteredServices;
                         headers = [['Computer ID', 'Log Date', 'Troubleshooting Remarks', 'Status']];
                         rows = targetData.map(s => [s.computer_name, s.created_at.split('T')[0], s.details, s.status]);
                     }
@@ -1089,15 +1100,75 @@
                     doc.text(`Kategori: ${type.toUpperCase()} LOGS | Record Terformat: ${targetData.length} Baris`, 14, 22);
 
                     doc.autoTable({ head: headers, body: rows, startY: 28, theme: 'grid' });
-                    doc.save(`rekap-${type}-${new Date().toISOString().slice(0,10)}.pdf`);
+                    
+                    try {
+                        doc.save(`rekap-${type}-${new Date().toISOString().slice(0,10)}.pdf`);
+                    } catch (e) {
+                        const blobPDF = doc.output('bloburl');
+                        window.open(blobPDF, '_blank');
+                    }
                 },
 
-                getCurrentMonthYear() { 
-                    const options = { month: 'long', year: 'numeric' };
-                    return new Date().toLocaleDateString('en-US', options); 
+                // 🛠️ AUTOMATIC DYNAMIC EXCEL EXPORT ENGINE (WITH SEJAJAR FORMAT HEADLINE)
+                downloadExcel(type) {
+                    try {
+                        const wb = XLSX.utils.book_new();
+                        let wsData = [];
+                        let wsName = "";
+                        let titleText = "";
+                        let subtitleText = "";
+
+                        // 1. Ambil data terfilter dinamis saat ini di layar
+                        if (type === 'loans') {
+                            wsName = "Loan Records";
+                            titleText = "DARUSSALAM COMPUTER CENTER - LAPORAN REKAPITULASI PEMINJAMAN UNIT";
+                            subtitleText = `Filter Rentang Log: ${this.filterStartDate || 'All'} s/d ${this.filterEndDate || 'All'} | Total: ${this.filteredLoans.length} Unit`;
+                            
+                            wsData = this.filteredLoans.map(l => [l.computer_name, l.committee, l.start_date, l.end_date, l.status]);
+                            wsData.unshift(["Computer ID", "Committee Scope", "Start Date", "End Date", "Status Component Log"]);
+                        } else {
+                            wsName = "Maintenance Logs";
+                            titleText = "DARUSSALAM COMPUTER CENTER - LOG DEFECT & MAINTENANCE SUMMARY";
+                            subtitleText = `Filter Rentang Log: ${this.filterStartDate || 'All'} s/d ${this.filterEndDate || 'All'} | Total: ${this.filteredServices.length} Records`;
+                            
+                            wsData = this.filteredServices.map(s => [s.computer_name, s.created_at.split('T')[0], s.details, s.status]);
+                            wsData.unshift(["Computer ID", "Log Date", "Troubleshooting Engineering Remarks", "Status Technical Check"]);
+                        }
+
+                        // 2. Desain Baris Kosong & Sisipkan Judul Utama Sejajar Rata Kiri di Baris 1 & 2
+                        wsData.unshift([]); 
+                        wsData.unshift([subtitleText]);
+                        wsData.unshift([titleText]);
+
+                        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+                        // 3. Trik RLS Merge Headline: Gabungkan sel baris judul agar lurus memanjang rata kiri di atas tabel
+                        if(!ws['!merges']) ws['!merges'] = [];
+                        ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }); // Merge judul baris 1
+                        ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }); // Merge sub-judul baris 2
+
+                        // 4. Hitung lebar kolom otomatis (Auto-Fit Column Widths)
+                        const cols = [];
+                        const maxCols = wsData[3] ? wsData[3].length : 4;
+                        for (let C = 0; C < maxCols; ++C) {
+                            let maxWidth = 14; 
+                            for (let R = 3; R < wsData.length; ++R) {
+                                if (wsData[R] && wsData[R][C]) {
+                                    const cellLen = wsData[R][C].toString().length;
+                                    if (cellLen > maxWidth) maxWidth = cellLen;
+                                }
+                            }
+                            cols.push({ wch: maxWidth + 3 });
+                        }
+                        ws['!cols'] = cols;
+
+                        XLSX.utils.book_append_sheet(wb, ws, wsName);
+                        XLSX.writeFile(wb, `rekap-${type}-${new Date().toISOString().slice(0,10)}.xlsx`);
+                    } catch (error) {
+                        alert("Gagal memproses file Excel: " + error.message);
+                    }
                 },
 
-                // 🛠️ ADVANCED REALTIME LOGICAL FILTERS (ALUR FILTER TANGGAL & BULAN INI) 🛠️
                 get filteredLoans() {
                     let result = this.loans;
                     if (this.searchQuery.trim()) {
