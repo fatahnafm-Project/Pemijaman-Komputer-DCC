@@ -515,11 +515,37 @@
             </div>
 
             <div x-show="currentMenu === 'recap'" x-transition class="space-y-6">
-                <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="relative max-w-sm w-full">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search text-xs"></i></span>
-                        <input type="text" x-model="searchQuery" placeholder="Filter tables by Computer Node ID..." class="w-full border border-slate-300 rounded-lg pl-9 pr-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-100 grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Search By PC ID</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search text-xs"></i></span>
+                            <input type="text" x-model="searchQuery" placeholder="PC-01, PC-02..." class="w-full border border-slate-300 rounded-lg pl-9 pr-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
                     </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Mulai Tanggal</label>
+                        <input type="date" x-model="filterStartDate" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Sampai Tanggal</label>
+                        <input type="date" x-model="filterEndDate" class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div class="flex space-x-2">
+                        <button @click="setFilterThisMonth()" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold py-2 px-3 rounded-lg transition shadow-sm flex items-center justify-center cursor-pointer">
+                            <i class="fa-solid fa-calendar-day mr-1.5"></i> Bulan Ini
+                        </button>
+                        <button @click="resetRecapFilters()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 px-3 rounded-lg transition flex items-center justify-center cursor-pointer" title="Reset Semua Filter">
+                            <i class="fa-solid fa-filter-circle-xmark"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">
+                        Menampilkan <span class="font-bold text-blue-700" x-text="filteredLoans.length"></span> Riwayat Peminjaman & <span class="font-bold text-emerald-700" x-text="filteredServices.length"></span> Log Maintenance.
+                    </span>
                     <div class="flex space-x-2">
                         <button @click="downloadPDF('loans')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-sm flex items-center cursor-pointer">
                             <i class="fa-solid fa-file-pdf mr-1.5"></i> Loans Report
@@ -541,7 +567,7 @@
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 <template x-if="filteredLoans.length === 0">
-                                    <tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No structured data found matching queries.</td></tr>
+                                    <tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No structured data found matching date filters.</td></tr>
                                 </template>
                                 <template x-for="loan in filteredLoans" :key="loan.id">
                                     <tr class="hover:bg-slate-50/50">
@@ -621,10 +647,6 @@
         </main>
     </div>
 
-    <footer class="bg-slate-800 text-slate-400 text-center py-3 text-[11px] border-t border-slate-700 mt-auto">
-        &copy; 2026 Darussalam Computer Center • Secured with Distributed Architecture Cloud Systems
-    </footer>
-
     <script>
         const SUPABASE_URL = "https://qufiavhyxiiklalcgklk.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Zmlhdmh5eGlpa2xhbGNna2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTA2MzEsImV4cCI6MjA5NTQ4NjYzMX0.Ywsf6lQ6InM6W35fiqyqIXil7V33X402VhRznUcMAFo";
@@ -641,6 +663,10 @@
                 authLoading: false,
                 loanLoading: false, 
                 refreshLoading: false,
+
+                // 🛠️ NEW VARIABLE STATE FOR CHRONO FILTERS (STATE FILTER BARU)
+                filterStartDate: '',
+                filterEndDate: '',
 
                 chatMessages: [],
                 textChatBaru: '',
@@ -692,6 +718,7 @@
                     if (this.refreshLoading) return;
                     this.refreshLoading = true;
                     try {
+                        this.resetRecapFilters(); // 👈 KEMBALIKAN KE DEFAULT SAAT REFRESH DIKLIK
                         await this.syncDatabaseState();
                         if (this.currentMenu === 'chat') {
                             const { data: dataChat } = await supabaseClient.from('dcc_chats').select('*').order('id', { ascending: true });
@@ -809,12 +836,12 @@
 
                 async fetchUserRole() {
                     try {
-                        const { data, error } = await supabaseClient
+                        const { data: userProfile, error } = await supabaseClient
                             .from('profiles')
                             .select('role')
                             .eq('id', this.session.user.id)
                             .single();
-                        if (data) this.userRole = data.role;
+                        if (userProfile) this.userRole = userProfile.role;
                     } catch (e) { console.error('Error establishing account role:', e); }
                 },
 
@@ -873,21 +900,33 @@
                     }
                 },
 
-                // 🔄 UTILITY ENGINE: MENGECEK APAKAH UNIT BENAR-BENAR SEDANG DIPINJAM DI INVENTORY
                 isUnitBorrowed(computerName) {
                     const matchedUnit = this.inventories.find(i => i.computer_name.toUpperCase() === computerName.toUpperCase());
-                    // Jika unit ditemukan dan is_available bernilai FALSE, artinya unit BENAR sedang dipinjam
                     return matchedUnit ? !matchedUnit.is_available : false;
                 },
 
-                // 🟢 RE-SYNCRONIZED ENGINE FOR CLOSING FROM DASHBOARD OVERDUE LIST
+                // 🟢 NEW CONTROLLER: LOGIKAL UTILITY UNTUK BULAN INI & CLEAR FILTERS
+                setFilterThisMonth() {
+                    const now = new Date();
+                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    
+                    this.filterStartDate = firstDay.toISOString().split('T')[0];
+                    this.filterEndDate = lastDay.toISOString().split('T')[0];
+                },
+
+                resetRecapFilters() {
+                    this.filterStartDate = '';
+                    this.filterEndDate = '';
+                    this.searchQuery = '';
+                },
+
                 async closeLoanFromDashboard(loan) {
                     if (!confirm(`Konfirmasi pengembalian ${loan.computer_name}? Tindakan ini akan mengarahkan Anda ke Menu Checking untuk memulihkan kelengkapan komponen.`)) return;
                     
                     this.checkingForm.computer_name = loan.computer_name;
                     this.currentMenu = 'checking';
                     
-                    // Bersihkan transaksi peminjaman aktif dari antrean database cloud
                     await supabaseClient.from('loans').delete().eq('id', loan.id);
                     await this.syncDatabaseState();
                 },
@@ -910,10 +949,7 @@
                     
                     const { error } = await supabaseClient
                         .from('loans')
-                        .update({ 
-                            end_date: newEndDateString,
-                            injury_time_used: true 
-                        })
+                        .update({ end_date: newEndDateString, injury_time_used: true })
                         .eq('id', loan.id);
                         
                     if (error) {
@@ -930,7 +966,6 @@
                     try {
                         const payload = { ...this.loanForm, computer_name: this.loanForm.computer_name.toUpperCase() };
                         const { error } = await supabaseClient.from('loans').insert([payload]);
-                        
                         if (error) { alert(error.message); return; }
                         
                         alert("Loan parameters synchronized directly onto the cloud layer!");
@@ -954,9 +989,7 @@
                     this.currentMenu = 'dashboard';
                 },
 
-                // 🛠️ PERBAIKAN UTAMA: SUBMIT CHECKING SEKALIGUS MENGHAPUS SISA DATA PINJAMAN DI DASHBOARD
                 async submitCheckingForm() {
-                    // 1. Catat log pemeriksaan hardware ke tabel services
                     const servicePayload = {
                         computer_name: this.checkingForm.computer_name,
                         details: "Pengecekan kelengkapan & pemulihan status unit via Menu Checking.",
@@ -966,11 +999,7 @@
                     const { error: serviceErr } = await supabaseClient.from('services').insert([servicePayload]);
                     if (serviceErr) { alert(serviceErr.message); return; }
                     
-                    // 2. Bersihkan otomatis transaksi peminjaman PC ini dari tabel loans jika masih tersisa
-                    await supabaseClient
-                        .from('loans')
-                        .delete()
-                        .eq('computer_name', this.checkingForm.computer_name.toUpperCase());
+                    await supabaseClient.from('loans').delete().eq('computer_name', this.checkingForm.computer_name.toUpperCase());
 
                     alert("Kondisi komponen komputer berhasil dipulihkan menjadi Hijau & list Dashboard dibersihkan!");
                     this.checkingForm = { computer_name: '', components: [] };
@@ -1036,23 +1065,28 @@
                     }
                 },
 
+                // 🛠️ PERBAIKAN: PDF REPORT DIKUNCI PAS MENGIKUTI HASIL FILTER LAYAR realtime 🛠️
                 downloadPDF(type) {
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF();
                     doc.text("REKAPITULASI DATA SYSTEM - DCC PLATFORM", 14, 15);
                     doc.setFontSize(10);
-                    doc.text(`Kategori: ${type.toUpperCase()} LOGS | Tanggal: ${new Date().toLocaleDateString()}`, 14, 22);
-
+                    
+                    let targetData = [];
                     let headers = [];
                     let rows = [];
 
                     if(type === 'loans') {
+                        targetData = this.filteredLoans; // 👈 Mengambil data yang lolos filter saja
                         headers = [['Computer ID', 'Committee Scope', 'Start Date', 'End Date', 'Status']];
-                        rows = this.loans.map(l => [l.computer_name, l.committee, l.start_date, l.end_date, l.status]);
+                        rows = targetData.map(l => [l.computer_name, l.committee, l.start_date, l.end_date, l.status]);
                     } else {
+                        targetData = this.filteredServices; // 👈 Mengambil data yang lolos filter saja
                         headers = [['Computer ID', 'Log Date', 'Troubleshooting Remarks', 'Status']];
-                        rows = this.services.map(s => [s.computer_name, s.created_at.split('T')[0], s.details, s.status]);
+                        rows = targetData.map(s => [s.computer_name, s.created_at.split('T')[0], s.details, s.status]);
                     }
+
+                    doc.text(`Kategori: ${type.toUpperCase()} LOGS | Record Terformat: ${targetData.length} Baris`, 14, 22);
 
                     doc.autoTable({ head: headers, body: rows, startY: 28, theme: 'grid' });
                     doc.save(`rekap-${type}-${new Date().toISOString().slice(0,10)}.pdf`);
@@ -1062,13 +1096,33 @@
                     const options = { month: 'long', year: 'numeric' };
                     return new Date().toLocaleDateString('en-US', options); 
                 },
+
+                // 🛠️ ADVANCED REALTIME LOGICAL FILTERS (ALUR FILTER TANGGAL & BULAN INI) 🛠️
                 get filteredLoans() {
-                    if (!this.searchQuery.trim()) return this.loans;
-                    return this.loans.filter(l => l.computer_name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                    let result = this.loans;
+                    if (this.searchQuery.trim()) {
+                        result = result.filter(l => l.computer_name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                    }
+                    if (this.filterStartDate) {
+                        result = result.filter(l => l.start_date >= this.filterStartDate);
+                    }
+                    if (this.filterEndDate) {
+                        result = result.filter(l => l.start_date <= this.filterEndDate);
+                    }
+                    return result;
                 },
                 get filteredServices() {
-                    if (!this.searchQuery.trim()) return this.services;
-                    return this.services.filter(s => s.computer_name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                    let result = this.services;
+                    if (this.searchQuery.trim()) {
+                        result = result.filter(s => s.computer_name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                    }
+                    if (this.filterStartDate) {
+                        result = result.filter(s => s.created_at.split('T')[0] >= this.filterStartDate);
+                    }
+                    if (this.filterEndDate) {
+                        result = result.filter(s => s.created_at.split('T')[0] <= this.filterEndDate);
+                    }
+                    return result;
                 }
             }
         }
